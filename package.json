@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "dev": "npm run dev -w @analytix/web",
-    "build:packages": "npm run build -w @analytix/core && npm run build -w @analytix/react && npm run build -w @analytix/dashboard",
+    "build:packages": "npm run build -w @Shashank519915/analytix-core && npm run build -w @Shashank519915/analytix-react && npm run build -w @Shashank519915/analytix-dashboard",
     "build": "npm run build:packages && npm run build -w @analytix/db && npm run build -w @analytix/web",
     "publish:packages": "node scripts/publish-packages.mjs",
     "configure:scope": "node scripts/configure-github-scope.mjs",

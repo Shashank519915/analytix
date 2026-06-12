@@ -38,11 +38,17 @@ async function migrate() {
   }
 
   const sql = neon(url);
-  const schema = readFileSync(join(__dirname, "..", "src", "schema.sql"), "utf8");
+  const schemaPath = join(__dirname, "..", "src", "schema.sql");
+  let schema = readFileSync(schemaPath, "utf8");
+  // Drop full-line comments so bundled statements are not skipped.
+  schema = schema
+    .split("\n")
+    .filter((line) => !line.trim().startsWith("--"))
+    .join("\n");
   const statements = schema
     .split(";")
     .map((s) => s.trim())
-    .filter((s) => s.length > 0 && !s.startsWith("--"));
+    .filter(Boolean);
 
   for (const statement of statements) {
     await sql.query(statement + ";");

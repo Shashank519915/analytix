@@ -1,11 +1,13 @@
 {
-  "name": "@analytix/core",
+  "name": "@Shashank519915/analytix-core",
   "version": "0.1.0",
   "description": "Analytix core types, validation, and helpers",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -19,7 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_GITHUB_ORG/analytix.git",
+    "url": "https://github.com/Shashank519915/analytix.git",
     "directory": "packages/core"
   },
   "scripts": {

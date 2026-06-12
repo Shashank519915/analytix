@@ -1,0 +1,10 @@
+# Deploy analytics/apps/web as a separate Netlify site (not Bluemint).
+# Netlify UI: Base directory = apps/web (or leave root and use build command below)
+
+[build]
+  base = "apps/web"
+  command = "cd ../.. && npm install && npm run build -w @analytix/db && npm run build -w @analytix/web"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

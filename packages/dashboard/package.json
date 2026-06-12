@@ -1,11 +1,13 @@
 {
-  "name": "@analytix/dashboard",
-  "version": "0.1.0",
+  "name": "@Shashank519915/analytix-dashboard",
+  "version": "0.1.1",
   "description": "Analytix embeddable analytics dashboard UI",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -20,7 +22,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_GITHUB_ORG/analytix.git",
+    "url": "https://github.com/Shashank519915/analytix.git",
     "directory": "packages/dashboard"
   },
   "scripts": {
@@ -33,11 +35,11 @@
     "lucide-react": ">=0.400"
   },
   "dependencies": {
-    "@analytix/core": "^0.1.0"
+    "@Shashank519915/analytix-core": "^0.1.0"
   },
   "devDependencies": {
-    "@analytix/core": "*",
     "@types/react": "^19",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@Shashank519915/analytix-core": "*"
   }
 }

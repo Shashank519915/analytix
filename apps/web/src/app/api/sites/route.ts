@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createSiteSchema } from "@analytix/core";
+import { createSiteSchema } from "@Shashank519915/analytix-core";
 import { createSite, listSitesForAccount } from "@analytix/db";
 import { AuthError, requireAccountSession } from "@/lib/auth";
 

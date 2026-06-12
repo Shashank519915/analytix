@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import type { AnalyticsFilters, AnalyticsScope } from "@analytix/core";
-import { resolveDateRange } from "@analytix/core";
+import type { AnalyticsFilters, AnalyticsScope } from "@Shashank519915/analytix-core";
+import { resolveDateRange } from "@Shashank519915/analytix-core";
 import { getAnalyticsSummary } from "@analytix/db";
 import { AuthError, authorizeSiteAccess } from "@/lib/auth";
 

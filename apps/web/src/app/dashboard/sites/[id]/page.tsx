@@ -3,10 +3,10 @@ import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
 import { getSiteById } from "@analytix/db";
 import { requireAccountSession } from "@/lib/auth";
-import "@analytix/dashboard/styles.css";
+import "@Shashank519915/analytix-dashboard/styles.css";
 
 const AnalyticsDashboard = dynamic(
-  () => import("@analytix/dashboard").then((mod) => mod.AnalyticsDashboard),
+  () => import("@Shashank519915/analytix-dashboard").then((mod) => mod.AnalyticsDashboard),
   {
     loading: () => <div className="card">Loading analytics…</div>,
   }

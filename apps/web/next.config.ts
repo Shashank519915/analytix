@@ -2,10 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   transpilePackages: [
-    "@analytix/core",
+    "@Shashank519915/analytix-core",
     "@analytix/db",
-    "@analytix/react",
-    "@analytix/dashboard",
+    "@Shashank519915/analytix-react",
+    "@Shashank519915/analytix-dashboard",
   ],
 };
 

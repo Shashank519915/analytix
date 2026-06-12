@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { registerSchema } from "@analytix/core";
+import { registerSchema } from "@Shashank519915/analytix-core";
 import { createAccount, getAccountByEmail } from "@analytix/db";
 import {
   AuthError,

@@ -6,7 +6,7 @@ import {
   extractGeoFromRequest,
   hashIp,
   isOriginAllowed,
-} from "@analytix/core";
+} from "@Shashank519915/analytix-core";
 import {
   getSiteBySiteKey,
   incrementRateLimit,

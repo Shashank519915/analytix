@@ -1,5 +1,5 @@
-import { generateApiSecret, generateSiteKey } from "@analytix/core";
-import type { SiteRecord } from "@analytix/core";
+import { generateApiSecret, generateSiteKey } from "@Shashank519915/analytix-core";
+import type { SiteRecord } from "@Shashank519915/analytix-core";
 import { getDb } from "./client";
 import { firstRow, asRows } from "./rows";
 

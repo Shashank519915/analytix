@@ -1,7 +1,7 @@
 import { getDb } from "./client";
 import { firstRow, asRows } from "./rows";
 import { hashPassword } from "./password";
-import type { AccountRecord } from "@analytix/core";
+import type { AccountRecord } from "@Shashank519915/analytix-core";
 
 export async function createAccount(
   email: string,

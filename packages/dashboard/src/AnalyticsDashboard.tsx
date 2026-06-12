@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type { AnalyticsSummary } from "@analytix/core";
-import { percentChange } from "@analytix/core";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import type { AnalyticsSummary } from "@Shashank519915/analytix-core";
+import { percentChange } from "@Shashank519915/analytix-core";
 import {
   Area,
   CartesianGrid,
@@ -13,7 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Download, Eye, Users, Clock, MousePointerClick } from "lucide-react";
+import { Download, Eye, Users, Clock, MousePointerClick, Repeat } from "lucide-react";
 
 type RangeKey = "24h" | "7d" | "30d" | "90d";
 type Granularity = "hour" | "day";
@@ -23,6 +23,8 @@ export interface AnalyticsDashboardProps {
   siteId: string;
   summaryEndpoint?: string;
   exportEndpoint?: string;
+  /** Shown while fetching summary data (e.g. site-branded skeleton). */
+  loadingFallback?: ReactNode;
 }
 
 function formatBucketLabel(value: string, granularity: Granularity) {
@@ -54,6 +56,7 @@ export function AnalyticsDashboard({
   siteId,
   summaryEndpoint,
   exportEndpoint,
+  loadingFallback,
 }: AnalyticsDashboardProps) {
   const summaryUrl = summaryEndpoint ?? `/api/v1/sites/${siteId}/summary`;
   const exportUrl = exportEndpoint ?? `/api/v1/sites/${siteId}/export`;
@@ -121,7 +124,11 @@ export function AnalyticsDashboard({
   );
 
   if (loading) {
-    return <div className="analytix-dash">Loading analytics…</div>;
+    return (
+      <div className="analytix-dash">
+        {loadingFallback ?? <p className="analytix-loading">Loading analytics…</p>}
+      </div>
+    );
   }
 
   if (error) {
@@ -248,6 +255,12 @@ export function AnalyticsDashboard({
           <Delta current={summary.unique_visitors} previous={prev?.unique_visitors} />
         </div>
         <div className="metricCard">
+          <Repeat size={18} />
+          <span className="metricValue">{formatNumber(summary.total_sessions)}</span>
+          <span className="metricLabel">Sessions</span>
+          <Delta current={summary.total_sessions} previous={prev?.total_sessions} />
+        </div>
+        <div className="metricCard">
           <MousePointerClick size={18} />
           <span className="metricValue">{summary.bounce_rate}%</span>
           <span className="metricLabel">Bounce rate</span>
@@ -266,8 +279,8 @@ export function AnalyticsDashboard({
 
       <div className="chartPanel">
         <div className="panelTitle">Traffic over time</div>
-        <div style={{ width: "100%", height: 280 }}>
-          <ResponsiveContainer>
+        <div style={{ width: "100%", height: 280, minHeight: 280 }}>
+          <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.08)" />
               <XAxis dataKey="label" tick={{ fontSize: 12 }} />

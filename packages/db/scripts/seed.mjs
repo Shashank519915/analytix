@@ -1,6 +1,8 @@
 import { readFileSync, existsSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import { randomBytes, scryptSync } from "crypto";
+import { neon } from "@neondatabase/serverless";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -28,46 +30,94 @@ function loadEnvFile() {
   }
 }
 
+function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function generateSiteKey() {
+  return `sk_live_${randomBytes(24).toString("hex")}`;
+}
+
+function generateApiSecret() {
+  return `sk_secret_${randomBytes(32).toString("hex")}`;
+}
+
+function normalizeDomain(domain) {
+  return domain.replace(/^https?:\/\//, "").replace(/\/$/, "");
+}
+
 async function seed() {
   loadEnvFile();
 
-  const { createAccount } = await import("../dist/accounts.js");
-  const { createSite } = await import("../dist/sites.js");
-  const { getAccountByEmail } = await import("../dist/accounts.js");
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    console.error("DATABASE_URL is required (set in analytics/.env.local)");
+    process.exit(1);
+  }
 
+  const sql = neon(url);
   const email = process.env.SEED_EMAIL ?? "admin@analytix.local";
   const password = process.env.SEED_PASSWORD ?? "changeme123";
   const siteName = process.env.SEED_SITE_NAME ?? "BlueMint Services";
-  const siteDomain = process.env.SEED_SITE_DOMAIN ?? "bluemint.services";
+  const siteDomain = normalizeDomain(process.env.SEED_SITE_DOMAIN ?? "bluemint.services");
+  const allowedOrigins = JSON.stringify([
+    "http://localhost:3000",
+    "http://localhost:3002",
+    `https://${siteDomain}`,
+    `http://${siteDomain}`,
+  ]);
+  const excludePaths = JSON.stringify(["/admin*", "/blog/preview*"]);
 
-  let account = await getAccountByEmail(email);
-  if (!account) {
-    account = await createAccount(email, password, "Admin");
+  let accountRows = await sql`SELECT id, email FROM accounts WHERE email = ${email} LIMIT 1`;
+  let accountId = accountRows[0]?.id;
+
+  if (!accountId) {
+    const created = await sql`
+      INSERT INTO accounts (email, password_hash, name)
+      VALUES (${email}, ${hashPassword(password)}, ${"Admin"})
+      RETURNING id, email
+    `;
+    accountId = created[0].id;
     console.log("Created account:", email);
   } else {
     console.log("Account exists:", email);
   }
 
-  const { listSitesForAccount } = await import("../dist/sites.js");
-  const existing = await listSitesForAccount(account.id);
-  if (existing.length > 0) {
+  const existingSites = await sql`
+    SELECT id, site_key, api_secret FROM sites WHERE account_id = ${accountId}::uuid LIMIT 1
+  `;
+
+  if (existingSites.length > 0) {
     console.log("\nExisting site:");
-    console.log("  site_key:", existing[0].site_key);
-    console.log("  api_secret:", existing[0].api_secret);
+    console.log("  id:", existingSites[0].id);
+    console.log("  site_key:", existingSites[0].site_key);
+    console.log("  api_secret:", existingSites[0].api_secret);
     return;
   }
 
-  const site = await createSite(account.id, {
-    name: siteName,
-    domain: siteDomain,
-    exclude_paths: ["/admin*", "/blog/preview*"],
-    allowed_origins: ["http://localhost:3000", "http://localhost:3002", "https://bluemint.services"],
-  });
+  const siteKey = generateSiteKey();
+  const apiSecret = generateApiSecret();
+
+  const siteRows = await sql`
+    INSERT INTO sites (account_id, name, domain, site_key, api_secret, exclude_paths, allowed_origins)
+    VALUES (
+      ${accountId}::uuid,
+      ${siteName},
+      ${siteDomain},
+      ${siteKey},
+      ${apiSecret},
+      ${excludePaths}::jsonb,
+      ${allowedOrigins}::jsonb
+    )
+    RETURNING id, site_key, api_secret
+  `;
 
   console.log("\nSite created:");
-  console.log("  id:", site.id);
-  console.log("  site_key (public):", site.site_key);
-  console.log("  api_secret (server):", site.api_secret);
+  console.log("  id:", siteRows[0].id);
+  console.log("  site_key (public):", siteRows[0].site_key);
+  console.log("  api_secret (server):", siteRows[0].api_secret);
 }
 
 seed().catch((err) => {
