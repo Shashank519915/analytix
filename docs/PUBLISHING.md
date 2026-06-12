@@ -157,6 +157,25 @@ GitHub Action on tag `v*`:
 
 ---
 
+## 8. Making packages public (recommended for open source)
+
+By default GitHub Packages are **private** — consumers need `NPM_TOKEN` with `read:packages`.
+
+To make packages installable without auth:
+
+1. GitHub → each package page → **Package settings** → **Change visibility** → **Public**
+2. Or repo **Settings → Actions → General → Packages** (org policies may apply)
+
+After public:
+
+- Consumers still use `@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com` in `.npmrc`
+- They **do not** need `NPM_TOKEN` for `npm install` of public packages
+- `publishConfig.access` in `package.json` can stay `restricted` for publish; visibility is set on GitHub UI
+
+Alternatively publish to [npmjs.org](https://www.npmjs.com) with a scope you own — update `publishConfig.registry` and `configure-github-scope.mjs` accordingly.
+
+---
+
 ## Troubleshooting
 
 | Error | Fix |

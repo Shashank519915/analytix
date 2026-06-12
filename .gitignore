@@ -3,5 +3,10 @@ dist/
 .next/
 .env
 .env.local
+.npmrc
 *.log
 .DS_Store
+
+# Operator-specific deployment notes (URLs, keys checklist) — never commit
+docs/setup.local/
+DEPLOYMENT.local.md

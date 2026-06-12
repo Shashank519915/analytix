@@ -1,5 +1,8 @@
 # Analytix Integration Guide
 
+> **Updated:** See [docs/README.md](./README.md) for the full doc index.  
+> **Agents:** Start at [agents/README.md](./agents/README.md) or repo root [AGENTS.md](../AGENTS.md).
+
 How to host Analytix as a separate project and connect any website (including Bluemint).
 
 ---
@@ -60,8 +63,8 @@ Environment variables:
 
 Example Vercel setup:
 - Root directory: `analytics/apps/web`
-- Build: `cd ../.. && npm install && npm run build -w @analytix/web`
-- Or deploy the whole monorepo with correct root.
+- Build: `cd ../.. && npm install && npm run build`
+- Or deploy the whole monorepo with correct root (see [setup/DEPLOY-NETLIFY.md](./setup/DEPLOY-NETLIFY.md)).
 
 ---
 

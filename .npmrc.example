@@ -1,15 +1,6 @@
-# GitHub Packages — scope only (safe to commit this example)
-# Auth token goes in your USER-level file, NOT in the repo:
-#   C:\Users\<you>\.npmrc
-#
-# Option A — token in user .npmrc (simplest, what you already have):
-#   @Shashank519915:registry=https://npm.pkg.github.com
-#   //npm.pkg.github.com/:_authToken=ghp_xxxxxxxx
-#
-# Option B — token via env var (no token in any file):
-#   @Shashank519915:registry=https://npm.pkg.github.com
-#   //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-#   PowerShell before publish/install:
-#     $env:GITHUB_TOKEN="ghp_xxxxxxxx"
+# GitHub Packages — replace YOUR_GITHUB_USERNAME with your GitHub username or org
+@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
 
-@Shashank519915:registry=https://npm.pkg.github.com
+# When packages are public on GitHub Packages, consumers may not need NPM_TOKEN.
+# See docs/PUBLISHING.md for making packages public.
