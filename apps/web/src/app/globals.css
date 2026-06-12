@@ -18,7 +18,7 @@
   --ax-warn-bg: #fbf3db;
   --ax-warn: #956400;
   --ax-sidebar: #fbfbfa;
-  --ax-sidebar-width: 240px;
+  --ax-sidebar-width: 220px;
   --ax-radius: 8px;
   --ax-radius-lg: 12px;
   --ax-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -276,20 +276,36 @@ kbd {
 /* App shell */
 
 .appShell {
-  display: grid;
-  grid-template-columns: var(--ax-sidebar-width) minmax(0, 1fr);
+  display: flex;
+  align-items: stretch;
+  width: 100%;
   min-height: 100vh;
 }
 
 .appSidebar {
+  width: var(--ax-sidebar-width);
+  flex-shrink: 0;
   position: sticky;
   top: 0;
+  align-self: flex-start;
   height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 24px 16px;
+  padding: 20px 14px;
   background: var(--ax-sidebar);
   border-right: 1px solid var(--ax-border);
+}
+
+.appShellMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.sidebarBackdrop {
+  display: none;
 }
 
 .appBrand {
@@ -365,7 +381,9 @@ kbd {
   color: var(--ax-ink);
   font-weight: 600;
   margin-bottom: 4px;
-  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .appMain {
@@ -376,6 +394,8 @@ kbd {
 .appMainInner {
   max-width: 1120px;
   margin: 0 auto;
+  width: 100%;
+  min-width: 0;
 }
 
 .mobileTopBar {
@@ -898,7 +918,7 @@ kbd {
 
 @media (max-width: 768px) {
   .appShell {
-    grid-template-columns: 1fr;
+    display: block;
   }
 
   .appSidebar {
@@ -915,18 +935,15 @@ kbd {
   }
 
   .sidebarBackdrop {
+    display: block;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.35);
     z-index: 40;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 220ms var(--ax-ease-out);
-  }
-
-  .sidebarBackdrop[data-open="true"] {
-    opacity: 1;
-    pointer-events: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgba(0, 0, 0, 0.35);
+    cursor: pointer;
   }
 
   .mobileTopBar {
@@ -948,5 +965,10 @@ kbd {
 
   .appMain {
     padding: 24px 20px 48px;
+  }
+
+  .pageHeader {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

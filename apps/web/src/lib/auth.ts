@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import type { AccountRecord, SiteRecord } from "@analytix/core";
 import { getAccountById, getSiteByApiSecret, getSiteById } from "@analytix/db";
+import { assertProductionEnv } from "./env";
 
 export const SESSION_COOKIE = "analytix_session";
 
@@ -11,6 +12,7 @@ export interface SessionPayload {
 }
 
 function getSecret() {
+  assertProductionEnv();
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     throw new Error("JWT_SECRET is not configured");

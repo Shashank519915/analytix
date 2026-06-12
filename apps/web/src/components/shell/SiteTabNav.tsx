@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import type { SiteTabId } from "@/lib/site-tabs";
 
 const TABS = [
-  { id: "analytics", label: "Analytics" },
-  { id: "settings", label: "Settings" },
-  { id: "integration", label: "Integration" },
-] as const;
-
-export type SiteTabId = (typeof TABS)[number]["id"];
+  { id: "analytics" as const, label: "Analytics" },
+  { id: "settings" as const, label: "Settings" },
+  { id: "integration" as const, label: "Integration" },
+];
 
 export function SiteTabNav({ siteId, activeTab }: { siteId: string; activeTab: SiteTabId }) {
   return (
@@ -25,9 +24,4 @@ export function SiteTabNav({ siteId, activeTab }: { siteId: string; activeTab: S
       ))}
     </nav>
   );
-}
-
-export function parseSiteTab(value: string | undefined): SiteTabId {
-  if (value === "settings" || value === "integration") return value;
-  return "analytics";
 }

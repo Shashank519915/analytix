@@ -91,7 +91,7 @@ export default function NewSitePage() {
               rows={4}
               value={allowedOrigins}
               onChange={(e) => setAllowedOrigins(e.target.value)}
-              placeholder={"https://example.com\nhttps://www.example.com"}
+              placeholder={"Leave blank to auto-add https://your-domain + localhost dev origins"}
             />
           </div>
 

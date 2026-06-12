@@ -1,0 +1,35 @@
+{
+  "name": "@analytix/tracker",
+  "version": "0.3.0",
+  "description": "Vanilla JS entry point for Analytix (SPA + script tag)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shashank519915/analytix.git",
+    "directory": "packages/tracker"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@analytix/core": "^0.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

@@ -48,6 +48,10 @@ export interface AnalyticsDashboardProps {
   defaultWidgets?: DashboardWidgetId[];
   /** PATCH endpoint to persist widget layout as site default. */
   settingsEndpoint?: string;
+  /** Called after widget layout is saved as site default. */
+  onWidgetsSaved?: () => void;
+  /** Called when saving widget layout fails. */
+  onWidgetsSaveError?: (message: string) => void;
 }
 
 function formatBucketLabel(value: string, granularity: Granularity) {
@@ -134,6 +138,8 @@ export function AnalyticsDashboard({
   defaultTheme = "system",
   defaultWidgets = DEFAULT_DASHBOARD_WIDGETS,
   settingsEndpoint,
+  onWidgetsSaved,
+  onWidgetsSaveError,
 }: AnalyticsDashboardProps) {
   const summaryUrl = summaryEndpoint ?? `/api/v1/sites/${siteId}/summary`;
   const exportUrl = exportEndpoint ?? `/api/v1/sites/${siteId}/export`;
@@ -158,6 +164,7 @@ export function AnalyticsDashboard({
   const hasLoadedRef = useRef(false);
   const [showWidgetCustomize, setShowWidgetCustomize] = useState(false);
   const [savingDefaultWidgets, setSavingDefaultWidgets] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
   const { widgets, toggleWidget, resetToDefault, isVisible } = useDashboardWidgets(
     siteId,
     defaultWidgets
@@ -214,7 +221,7 @@ export function AnalyticsDashboard({
     }
     setError("");
 
-    fetch(`${summaryUrl}?${filterParams.toString()}`)
+    fetch(`${summaryUrl}?${filterParams.toString()}`, { credentials: "same-origin" })
       .then(async (res) => {
         if (!res.ok) {
           const payload = await res.json().catch(() => ({}));
@@ -241,7 +248,7 @@ export function AnalyticsDashboard({
     return () => {
       cancelled = true;
     };
-  }, [summaryUrl, filterParams]);
+  }, [summaryUrl, filterParams, retryNonce]);
 
   const chartData = useMemo(
     () =>
@@ -267,6 +274,17 @@ export function AnalyticsDashboard({
     return (
       <div className={`analytix-dash ${themeClass}`}>
         <p className="error">{error}</p>
+        <button
+          type="button"
+          className="btnSecondary"
+          style={{ marginTop: 12 }}
+          onClick={() => {
+            setError("");
+            setRetryNonce((n) => n + 1);
+          }}
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -289,11 +307,21 @@ export function AnalyticsDashboard({
     if (!settingsEndpoint) return;
     setSavingDefaultWidgets(true);
     try {
-      await fetch(settingsEndpoint, {
+      const res = await fetch(settingsEndpoint, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ analytics_config: { dashboard_widgets: widgets } }),
       });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        const message =
+          typeof payload.error === "string" ? payload.error : "Failed to save widget layout";
+        onWidgetsSaveError?.(message);
+        return;
+      }
+      onWidgetsSaved?.();
+    } catch {
+      onWidgetsSaveError?.("Failed to save widget layout");
     } finally {
       setSavingDefaultWidgets(false);
     }
@@ -508,6 +536,9 @@ export function AnalyticsDashboard({
       <div className="chartPanel">
         <div className="panelTitle">Traffic over time</div>
         <div className="chartContainer">
+          {chartData.length === 0 ? (
+            <p className="emptyState">No traffic recorded for this period.</p>
+          ) : (
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
@@ -531,6 +562,7 @@ export function AnalyticsDashboard({
               <Line type="monotone" dataKey="uniques" stroke={lineStroke} name="Uniques" />
             </ComposedChart>
           </ResponsiveContainer>
+          )}
         </div>
       </div>
       ) : null}

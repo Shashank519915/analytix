@@ -56,12 +56,12 @@ export async function POST(request: Request) {
   const siteKey = request.headers.get("x-analytix-site-key");
 
   if (!siteKey) {
-    return NextResponse.json({ error: "Missing site key" }, { status: 401 });
+    return jsonWithCors({ error: "Missing site key" }, 401, origin, []);
   }
 
   const site = await getSiteBySiteKey(siteKey);
   if (!site) {
-    return NextResponse.json({ error: "Invalid site key" }, { status: 401 });
+    return jsonWithCors({ error: "Invalid site key" }, 401, origin, []);
   }
 
   if (origin && !isOriginAllowed(origin, site.allowed_origins)) {

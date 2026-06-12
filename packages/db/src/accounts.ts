@@ -34,5 +34,18 @@ export async function getAccountById(id: string): Promise<AccountRecord | null> 
   const rows = await sql`
     SELECT id, email, name, created_at FROM accounts WHERE id = ${id}::uuid LIMIT 1
   `;
-  return firstRow<AccountRecord>(rows) ?? null;
+  const row = firstRow<Record<string, unknown>>(rows);
+  if (!row) return null;
+  const createdAt = row.created_at;
+  return {
+    id: row.id as string,
+    email: row.email as string,
+    name: (row.name as string | null) ?? null,
+    created_at:
+      createdAt instanceof Date
+        ? createdAt.toISOString()
+        : typeof createdAt === "string"
+          ? createdAt
+          : String(createdAt ?? ""),
+  };
 }

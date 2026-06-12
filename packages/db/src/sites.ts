@@ -1,5 +1,6 @@
 import {
   DEFAULT_SITE_ANALYTICS_CONFIG,
+  buildDefaultAllowedOrigins,
   generateApiSecret,
   generateSiteKey,
   mergeAnalyticsConfig,
@@ -10,6 +11,7 @@ import { getDb } from "./client";
 import { firstRow, asRows } from "./rows";
 
 function parseSiteRow(row: Record<string, unknown>): SiteRecord {
+  const createdAt = row.created_at;
   return {
     id: row.id as string,
     account_id: row.account_id as string,
@@ -23,7 +25,12 @@ function parseSiteRow(row: Record<string, unknown>): SiteRecord {
     analytics_config: mergeAnalyticsConfig(
       (row.analytics_config as Partial<SiteAnalyticsConfig> | null) ?? DEFAULT_SITE_ANALYTICS_CONFIG
     ),
-    created_at: row.created_at as string,
+    created_at:
+      createdAt instanceof Date
+        ? createdAt.toISOString()
+        : typeof createdAt === "string"
+          ? createdAt
+          : String(createdAt ?? ""),
   };
 }
 
@@ -41,7 +48,11 @@ export async function createSite(
   const site_key = generateSiteKey();
   const api_secret = generateApiSecret();
   const exclude_paths = JSON.stringify(input.exclude_paths ?? ["/admin*", "/blog/preview*"]);
-  const allowed_origins = JSON.stringify(input.allowed_origins ?? []);
+  const allowed_origins = JSON.stringify(
+    input.allowed_origins?.length
+      ? input.allowed_origins
+      : buildDefaultAllowedOrigins(input.domain)
+  );
   const analytics_config = JSON.stringify(DEFAULT_SITE_ANALYTICS_CONFIG);
 
   const rows = await sql`
@@ -114,7 +125,10 @@ export async function updateSite(
   const name = input.name ?? current.name;
   const domain = input.domain ?? current.domain;
   const exclude_paths = JSON.stringify(input.exclude_paths ?? current.exclude_paths);
-  const allowed_origins = JSON.stringify(input.allowed_origins ?? current.allowed_origins);
+  const nextOrigins = input.allowed_origins ?? current.allowed_origins;
+  const allowed_origins = JSON.stringify(
+    nextOrigins.length ? nextOrigins : buildDefaultAllowedOrigins(domain)
+  );
   const retention_days = input.retention_days ?? current.retention_days;
   const analytics_config = JSON.stringify(
     mergeAnalyticsConfig({

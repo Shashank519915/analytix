@@ -3,6 +3,7 @@ import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { randomBytes, scryptSync } from "crypto";
 import { neon } from "@neondatabase/serverless";
+import { buildDefaultAllowedOrigins, parseExtraOriginsEnv } from "./lib/origins.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -62,12 +63,8 @@ async function seed() {
   const password = process.env.SEED_PASSWORD ?? "changeme123";
   const siteName = process.env.SEED_SITE_NAME ?? "BlueMint Services";
   const siteDomain = normalizeDomain(process.env.SEED_SITE_DOMAIN ?? "bluemint.services");
-  const allowedOrigins = JSON.stringify([
-    "http://localhost:3000",
-    "http://localhost:3002",
-    `https://${siteDomain}`,
-    `http://${siteDomain}`,
-  ]);
+  const extraOrigins = parseExtraOriginsEnv();
+  const allowedOrigins = JSON.stringify(buildDefaultAllowedOrigins(siteDomain, extraOrigins));
   const excludePaths = JSON.stringify(["/admin*", "/blog/preview*"]);
 
   let accountRows = await sql`SELECT id, email FROM accounts WHERE email = ${email} LIMIT 1`;
@@ -86,14 +83,27 @@ async function seed() {
   }
 
   const existingSites = await sql`
-    SELECT id, site_key, api_secret FROM sites WHERE account_id = ${accountId}::uuid LIMIT 1
+    SELECT id, site_key, api_secret, domain, allowed_origins FROM sites WHERE account_id = ${accountId}::uuid LIMIT 1
   `;
 
   if (existingSites.length > 0) {
+    const existing = existingSites[0];
+    const origins = existing.allowed_origins ?? [];
+    if (!Array.isArray(origins) || origins.length === 0) {
+      const next = buildDefaultAllowedOrigins(existing.domain ?? siteDomain, extraOrigins);
+      await sql`
+        UPDATE sites
+        SET allowed_origins = ${JSON.stringify(next)}::jsonb
+        WHERE id = ${existing.id}::uuid
+      `;
+      console.log("\nBackfilled allowed_origins on existing site:");
+      for (const origin of next) console.log(" ", origin);
+    }
+
     console.log("\nExisting site:");
-    console.log("  id:", existingSites[0].id);
-    console.log("  site_key:", existingSites[0].site_key);
-    console.log("  api_secret:", existingSites[0].api_secret);
+    console.log("  id:", existing.id);
+    console.log("  site_key:", existing.site_key);
+    console.log("  api_secret:", existing.api_secret);
     return;
   }
 

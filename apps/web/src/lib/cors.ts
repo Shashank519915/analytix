@@ -10,13 +10,9 @@ export function buildCorsHeaders(
     "Access-Control-Max-Age": "86400",
   };
 
-  if (isOriginAllowed(origin, allowedOrigins)) {
-    if (origin) {
-      headers["Access-Control-Allow-Origin"] = origin;
-      headers.Vary = "Origin";
-    } else if (allowedOrigins.length === 0) {
-      headers["Access-Control-Allow-Origin"] = "*";
-    }
+  if (origin && isOriginAllowed(origin, allowedOrigins)) {
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers.Vary = "Origin";
   }
 
   return headers;

@@ -73,9 +73,10 @@ export function Analytics({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({
           event_type: "page_view",
           path: "/integration-test",
-          title: "Analytix integration test",
+          session_id: crypto.randomUUID(),
+          visitor_fingerprint: "analytix-integration-test",
           referrer: "",
-          metadata: { source: "analytix_platform_test" },
+          metadata: { source: "analytix_platform_test", page_title: "Analytix integration test" },
         }),
       });
 

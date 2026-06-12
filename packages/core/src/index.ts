@@ -4,3 +4,4 @@ export * from "./request";
 export * from "./scope";
 export * from "./ua-parse";
 export * from "./analytics-config";
+export * from "./client/index";

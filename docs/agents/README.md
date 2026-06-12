@@ -6,10 +6,11 @@ You are integrating **Analytix**, a hosted first-party analytics service. Read t
 
 1. [OVERVIEW.md](./OVERVIEW.md) — mental model, components, decision tree
 2. [INTEGRATE-NEXTJS.md](./INTEGRATE-NEXTJS.md) — step-by-step integration checklist
-3. [ENV-VARS.md](./ENV-VARS.md) — every env var, local vs production
-4. [API-REFERENCE.md](./API-REFERENCE.md) — platform HTTP API
-5. [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) — known failures and fixes
-6. [REFERENCE-IMPLEMENTATION.md](./REFERENCE-IMPLEMENTATION.md) — integration patterns
+3. [FRAMEWORK-GUIDES.md](./FRAMEWORK-GUIDES.md) — SDK v2: Next.js, Vite, vanilla JS
+4. [ENV-VARS.md](./ENV-VARS.md) — every env var, local vs production
+5. [API-REFERENCE.md](./API-REFERENCE.md) — platform HTTP API
+6. [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) — known failures and fixes
+7. [REFERENCE-IMPLEMENTATION.md](./REFERENCE-IMPLEMENTATION.md) — integration patterns
 
 Operator setup (DB, deploy, seed): [../setup/PLATFORM-SETUP.md](../setup/PLATFORM-SETUP.md)
 
@@ -68,7 +69,7 @@ User wants analytics on a Next.js site?
 | `@analytix/react` | **Required** for tracking | Client SDK + React provider |
 | `@analytix/dashboard` | Optional | Embeddable admin charts |
 
-Current version: **^0.2.2** (see [PUBLISHING.md](../PUBLISHING.md)).
+Current version: **^0.3.0** for core/react/tracker; dashboard **^0.2.2** (see [PUBLISHING.md](../PUBLISHING.md)).
 
 Platform-only (never publish to consumer):
 

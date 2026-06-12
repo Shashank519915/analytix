@@ -1,49 +1,44 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { PublicSiteConfig } from "@analytix/core";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import {
+  createAnalytixClient,
+  fetchPublicSiteConfig,
+  type AnalytixClient,
+  type PublicSiteConfig,
+} from "@analytix/core";
 
 export interface AnalytixConfig {
-  /** Public site key (sk_live_...) */
   siteKey: string;
-  /** Collect endpoint URL, e.g. https://analytics.example.com/api/v1/collect */
   collectUrl: string;
-  /** Optional public config endpoint, e.g. https://analytics.example.com/api/v1/config */
   configUrl?: string;
-  /** Optional storage key prefix to isolate sites on same origin */
   storagePrefix?: string;
-  /** Paths to skip tracking entirely (client-side, in addition to server exclude_paths) */
   skipPaths?: string[];
-  /** When true, tracking starts immediately. When false and consent_required, waits for grantConsent(). */
   consentGranted?: boolean;
+  debug?: boolean;
 }
 
 interface AnalytixContextValue {
   config: AnalytixConfig;
+  client: AnalytixClient;
   siteConfig: PublicSiteConfig | null;
-  /** True once remote config fetch finished (or no configUrl). */
   configReady: boolean;
   consentGranted: boolean;
   grantConsent: () => void;
+  revokeConsent: () => void;
 }
 
 const AnalytixContext = createContext<AnalytixContextValue | null>(null);
 
-export async function fetchPublicSiteConfig(
-  configUrl: string,
-  siteKey: string
-): Promise<PublicSiteConfig | null> {
-  try {
-    const res = await fetch(configUrl, {
-      headers: { "X-Analytix-Site-Key": siteKey },
-    });
-    if (!res.ok) return null;
-    const payload = await res.json();
-    return payload.config ?? null;
-  } catch {
-    return null;
-  }
-}
+export { fetchPublicSiteConfig };
 
 export function AnalytixProvider({
   config,
@@ -52,40 +47,50 @@ export function AnalytixProvider({
   config: AnalytixConfig;
   children: ReactNode;
 }) {
-  const [siteConfig, setSiteConfig] = useState<PublicSiteConfig | null>(null);
-  const [configReady, setConfigReady] = useState(!config.configUrl);
-  const [consentGranted, setConsentGranted] = useState(() => {
-    if (config.consentGranted !== undefined) return config.consentGranted;
-    return !config.configUrl;
-  });
+  const clientRef = useRef<AnalytixClient | null>(null);
+  if (!clientRef.current) {
+    clientRef.current = createAnalytixClient({
+      siteKey: config.siteKey,
+      collectUrl: config.collectUrl,
+      configUrl: config.configUrl,
+      storagePrefix: config.storagePrefix,
+      skipPaths: config.skipPaths,
+      consentGranted: config.consentGranted,
+      debug: config.debug,
+    });
+  }
+
+  const client = clientRef.current;
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    if (!config.configUrl) return;
-
     let cancelled = false;
-    void fetchPublicSiteConfig(config.configUrl, config.siteKey).then((cfg) => {
-      if (cancelled) return;
-      setSiteConfig(cfg);
-      setConfigReady(true);
-      if (config.consentGranted !== undefined) return;
-      setConsentGranted(cfg?.consent_required ? false : true);
+    void client.ready().then(() => {
+      if (!cancelled) setTick((n) => n + 1);
     });
-
     return () => {
       cancelled = true;
     };
-  }, [config.configUrl, config.siteKey, config.consentGranted]);
+  }, [client]);
 
-  const value = useMemo(
-    () => ({
+  const value = useMemo(() => {
+    const state = client.getState();
+    return {
       config,
-      siteConfig,
-      configReady,
-      consentGranted,
-      grantConsent: () => setConsentGranted(true),
-    }),
-    [config, siteConfig, configReady, consentGranted]
-  );
+      client,
+      siteConfig: state.siteConfig,
+      configReady: state.configReady,
+      consentGranted: state.consentGranted,
+      grantConsent: () => {
+        client.grantConsent();
+        setTick((n) => n + 1);
+      },
+      revokeConsent: () => {
+        client.revokeConsent();
+        setTick((n) => n + 1);
+      },
+    };
+  }, [config, client, tick]);
 
   return <AnalytixContext.Provider value={value}>{children}</AnalytixContext.Provider>;
 }
@@ -94,6 +99,12 @@ export function useAnalytixConfig(): AnalytixConfig {
   const ctx = useContext(AnalytixContext);
   if (!ctx) throw new Error("useAnalytixConfig must be used within AnalytixProvider");
   return ctx.config;
+}
+
+export function useAnalytixClient(): AnalytixClient {
+  const ctx = useContext(AnalytixContext);
+  if (!ctx) throw new Error("useAnalytixClient must be used within AnalytixProvider");
+  return ctx.client;
 }
 
 export function useAnalytixRuntime() {

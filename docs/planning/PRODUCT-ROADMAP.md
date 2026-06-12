@@ -404,26 +404,37 @@ Shared: `loadingFallback`, `theme`, `widgets` props on embed package.
 - [x] Mobile: collapsible sidebar
 - [x] Landing `/` for logged-out visitors (product one-pager, not marketing fluff)
 
-## Phase 4 — SDK v2 (plugin architecture)
+## Phase 4 — SDK v2 (plugin architecture) ✅
 
 Inspired by [DavidWells/analytics](https://github.com/DavidWells/analytics) lifecycle model.
 
-- [ ] `@analytix/core`: `createClient({ plugins })` with `page`, `track`, `identify`
-- [ ] `AnalytixPlugin` interface + lifecycle (`bootstrap`, `pageStart`, `track`, `loaded`)
-- [ ] Built-in **Analytix backend plugin** (POST collect)
-- [ ] Offline queue + flush on reconnect
-- [ ] `debug` mode + optional devtools panel
-- [ ] Vanilla JS snippet (`@analytix/tracker` or `dist/analytix.min.js`)
-- [ ] `@analytix/react`: thin wrapper over core client (decouple from Next `usePathname`)
-- [ ] Framework guides: Next.js, Vite SPA, static HTML
+- [x] `@analytix/core`: `createAnalytixClient()` with `page`, `track`, `identify`, `engagement`
+- [x] `AnalytixPlugin` interface + lifecycle (`bootstrap`, `loaded`, `page`, `track`, `identify`)
+- [x] Built-in **backend plugin** (POST collect + offline queue flush on `online`)
+- [x] Offline queue (localStorage) + `flushQueue()`
+- [x] `debug` mode via debug plugin
+- [x] Scroll depth collection (when enabled in site config)
+- [x] `@analytix/tracker` — `initAnalytix()` for vanilla JS / SPA
+- [x] `@analytix/react`: thin wrapper; `AnalytixTrackerNext` + browser pathname fallback
+- [x] Framework guides: [FRAMEWORK-GUIDES.md](../agents/FRAMEWORK-GUIDES.md)
+- [ ] Optional devtools overlay (Phase 4b)
+- [ ] Outbound click plugin (Phase 5)
 
-## Phase 5 — Production hardening
+## Phase 5 — Production hardening (partial ✅)
 
+Shipped in 0.3.0 / platform pass:
+
+- [x] Fail-closed SDK when remote config fails
+- [x] Default allowed origins on site create; deny browser CORS when origins empty
+- [x] Production JWT secret validation
+- [x] Dashboard: chart empty state, fetch retry, widget-save feedback
+- [x] Platform error boundaries; API secret not in client RSC props
+- [x] Integration test event payload; Bluemint consent bridge + collect validation
 - [ ] Fix rollups + day-granularity read path
 - [ ] Summary cache (TTL 60s per site+filter hash)
 - [ ] Custom events registry + aggregation
 - [ ] Goals (page visit / custom event)
-- [ ] Scroll depth + outbound click collection
+- [ ] Outbound click plugin
 - [ ] First-touch attribution (original source)
 - [ ] PII redaction layer (configurable field denylist)
 - [ ] Auth rate limits + integration tests
@@ -516,6 +527,6 @@ Apply skills from `bluemint/.agents/skills/`:
 
 ## Next step
 
-**Immediate:** Publish `@analytix/react@0.2.3` (consent/config fix), bump Bluemint to `^0.2.3`, push lockfile, confirm Netlify green.
+**Immediate:** Publish `@analytix/core@0.3.0`, `@analytix/react@0.3.0`, `@analytix/tracker@0.3.0`, `@analytix/dashboard@0.2.3` — see [PRODUCTION-READINESS.md](../PRODUCTION-READINESS.md).
 
-**Then:** **Phase 4** — SDK plugin architecture.
+**Then:** Remaining Phase 5 (rollups, summary cache, outbound clicks, auth rate limits).

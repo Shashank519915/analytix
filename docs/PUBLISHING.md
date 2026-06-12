@@ -4,9 +4,10 @@ Analytix ships three **public** client packages on [npmjs.com](https://www.npmjs
 
 | Package | Purpose |
 |---------|---------|
-| `@analytix/core` | Types, validation, helpers |
-| `@analytix/react` | Client tracker + React provider |
+| `@analytix/core` | Types, validation, **`createAnalytixClient()`** |
+| `@analytix/react` | React provider + trackers |
 | `@analytix/dashboard` | Embeddable admin dashboard UI |
+| `@analytix/tracker` | Vanilla JS `initAnalytix()` |
 
 The platform app (`apps/web`) and `@analytix/db` stay in this repo — **not** published.
 
@@ -85,13 +86,23 @@ Then run `npm run publish:packages`.
 ```bash
 cd analytics
 npm install
-npm run build:packages
+npm run build
+npm run db:backfill-origins   # optional: fix sites with empty allowed_origins
 npm run publish:packages
 ```
 
-Publish order: **core → react → dashboard**.
+Publish order: **core → react → dashboard → tracker**.
 
-The publish script **skips versions already on npm** — safe to re-run after a partial publish (e.g. only `@analytix/react@0.2.3` is new).
+The publish script **skips versions already on npm** — safe to re-run after a partial publish.
+
+**Current versions:**
+
+| Package | Version |
+|---------|---------|
+| `@analytix/core` | 0.3.0 |
+| `@analytix/react` | 0.3.0 |
+| `@analytix/tracker` | 0.3.0 |
+| `@analytix/dashboard` | 0.2.3 |
 
 Publish a single package:
 
@@ -106,9 +117,10 @@ npm publish --access public -w @analytix/react
 ```json
 {
   "dependencies": {
-    "@analytix/core": "^0.2.2",
-    "@analytix/react": "^0.2.2",
-    "@analytix/dashboard": "^0.2.2"
+    "@analytix/core": "^0.3.0",
+    "@analytix/react": "^0.3.0",
+    "@analytix/dashboard": "^0.2.3",
+    "@analytix/tracker": "^0.3.0"
   }
 }
 ```

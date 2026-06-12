@@ -61,10 +61,35 @@ export function isPathExcluded(path: string, excludePaths: string[]): boolean {
 }
 
 export function isOriginAllowed(origin: string | null, allowedOrigins: string[]): boolean {
-  if (!origin) return allowedOrigins.length === 0;
-  if (allowedOrigins.length === 0) return true;
+  // No Origin header: server-side or same-origin non-CORS requests (curl, platform test).
+  if (!origin) return true;
+  if (allowedOrigins.length === 0) return false;
   return allowedOrigins.some((allowed) => {
     if (allowed === "*") return true;
     return origin === allowed || origin === `https://${allowed}` || origin === `http://${allowed}`;
   });
+}
+
+/** Default browser origins for a site domain (create + backfill). */
+export function buildDefaultAllowedOrigins(domain: string, extra: string[] = []): string[] {
+  const trimmed = domain.trim().replace(/\/$/, "");
+  const origins = new Set<string>();
+
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    origins.add(trimmed);
+  } else {
+    const host = trimmed.replace(/^https?:\/\//, "");
+    origins.add(`https://${host}`);
+    origins.add(`http://${host}`);
+  }
+
+  origins.add("http://localhost:3000");
+  origins.add("http://localhost:3001");
+
+  for (const item of extra) {
+    const value = item.trim();
+    if (value) origins.add(value);
+  }
+
+  return [...origins];
 }

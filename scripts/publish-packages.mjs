@@ -19,7 +19,7 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 
-const order = ["packages/core", "packages/react", "packages/dashboard"];
+const order = ["packages/core", "packages/react", "packages/dashboard", "packages/tracker"];
 const registry = "https://registry.npmjs.org";
 
 function run(cmd, args, cwd, inherit = true) {

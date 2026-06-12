@@ -1,12 +1,13 @@
 {
   "name": "@analytix/dashboard",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Analytix embeddable analytics dashboard UI",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "src/dashboard.css"
   ],
   "exports": {
     ".": {
@@ -14,7 +15,7 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./styles.css": "./dist/dashboard.css"
+    "./styles.css": "./src/dashboard.css"
   },
   "publishConfig": {
     "access": "public",
@@ -35,7 +36,7 @@
     "lucide-react": ">=0.400"
   },
   "dependencies": {
-    "@analytix/core": "^0.2.2"
+    "@analytix/core": "^0.3.0"
   },
   "devDependencies": {
     "@types/react": "^19",

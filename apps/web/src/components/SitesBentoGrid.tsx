@@ -50,7 +50,7 @@ export function SitesBentoGrid({ sites }: { sites: SiteRecord[] }) {
           </div>
           <div className="siteCardMeta">
             <span>Added {formatDate(site.created_at)}</span>
-            <span>{site.allowed_origins.length || 1} origin(s)</span>
+            <span>{site.allowed_origins.length} origin{site.allowed_origins.length === 1 ? "" : "s"}</span>
           </div>
           <span className="siteCardAction">Open site →</span>
         </Link>

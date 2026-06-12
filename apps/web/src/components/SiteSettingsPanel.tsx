@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type {
   CollectionEventType,
   CollectionFieldGroup,
@@ -45,7 +45,7 @@ export function SiteSettingsPanel({
   site,
   collectUrl,
 }: {
-  site: SiteRecord;
+  site: Omit<SiteRecord, "api_secret">;
   collectUrl: string;
 }) {
   const [name, setName] = useState(site.name);
@@ -69,7 +69,26 @@ export function SiteSettingsPanel({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [apiSecret, setApiSecret] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/sites/${site.id}`, { credentials: "same-origin" })
+      .then(async (res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then((payload) => {
+        if (!cancelled) setApiSecret(payload?.site?.api_secret ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setApiSecret(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [site.id]);
 
   async function handleSave(event: React.FormEvent) {
     event.preventDefault();
@@ -164,11 +183,13 @@ export function SiteSettingsPanel({
         <div>
           <span className="fieldLabel">API secret</span>
           <div className="secretRow">
-            <span>{site.api_secret}</span>
+            <span>{apiSecret ?? "Loading…"}</span>
+            {apiSecret ? (
             <CopyButton
-              value={site.api_secret}
+              value={apiSecret}
               onCopied={() => toast("API secret copied")}
             />
+            ) : null}
           </div>
         </div>
       </div>
