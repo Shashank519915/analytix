@@ -2,7 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { useAnalytixConfig } from "./AnalytixProvider";
+import { isPathExcluded, isPublicEventEnabled } from "@Shashank519915/analytix-core";
+import { useAnalytixRuntime } from "./AnalytixProvider";
 import { trackEngagement, trackPageView } from "./client";
 
 export interface AnalytixTrackerProps {
@@ -17,19 +18,24 @@ function defaultGetContent(pathname: string) {
 }
 
 export function AnalytixTracker({ getContentFromPath = defaultGetContent }: AnalytixTrackerProps) {
-  const config = useAnalytixConfig();
+  const { config, siteConfig, consentGranted } = useAnalytixRuntime();
   const pathname = usePathname();
   const lastTracked = useRef("");
   const pageStartedAt = useRef(Date.now());
   const currentPath = useRef("");
 
+  const skipPaths = [...(config.skipPaths ?? []), ...(siteConfig?.exclude_paths ?? [])];
+  const requiresConsent = siteConfig?.consent_required ?? false;
+  const trackingAllowed = consentGranted && (!requiresConsent || consentGranted);
+
   useEffect(() => {
-    if (!pathname) return;
-    if (config.skipPaths?.some((p) => pathname.startsWith(p))) return;
+    if (!pathname || !trackingAllowed) return;
+    if (isPathExcluded(pathname, skipPaths)) return;
 
     const sendEngagementForPrevious = () => {
       if (!currentPath.current) return;
-      trackEngagement(config, currentPath.current, Date.now() - pageStartedAt.current);
+      if (siteConfig && !isPublicEventEnabled(siteConfig, "engagement")) return;
+      trackEngagement(config, currentPath.current, Date.now() - pageStartedAt.current, siteConfig);
     };
 
     if (lastTracked.current === pathname) return;
@@ -39,14 +45,17 @@ export function AnalytixTracker({ getContentFromPath = defaultGetContent }: Anal
     currentPath.current = pathname;
     pageStartedAt.current = Date.now();
 
+    if (siteConfig && !isPublicEventEnabled(siteConfig, "page_view")) return;
+
     const content = getContentFromPath(pathname);
-    void trackPageView(config, pathname, content ?? undefined);
-  }, [pathname, config, getContentFromPath]);
+    void trackPageView(config, pathname, content ?? undefined, siteConfig);
+  }, [pathname, config, siteConfig, trackingAllowed, skipPaths, getContentFromPath]);
 
   useEffect(() => {
     function onHidden() {
-      if (document.visibilityState !== "hidden" || !currentPath.current) return;
-      trackEngagement(config, currentPath.current, Date.now() - pageStartedAt.current);
+      if (document.visibilityState !== "hidden" || !currentPath.current || !trackingAllowed) return;
+      if (siteConfig && !isPublicEventEnabled(siteConfig, "engagement")) return;
+      trackEngagement(config, currentPath.current, Date.now() - pageStartedAt.current, siteConfig);
     }
     window.addEventListener("visibilitychange", onHidden);
     window.addEventListener("pagehide", onHidden);
@@ -54,7 +63,7 @@ export function AnalytixTracker({ getContentFromPath = defaultGetContent }: Anal
       window.removeEventListener("visibilitychange", onHidden);
       window.removeEventListener("pagehide", onHidden);
     };
-  }, [config]);
+  }, [config, siteConfig, trackingAllowed]);
 
   return null;
 }

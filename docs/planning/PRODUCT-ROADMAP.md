@@ -345,22 +345,22 @@ Shared: `loadingFallback`, `theme`, `widgets` props on embed package.
 
 ## Phase 1 — Quick wins (1–2 weeks)
 
-- [ ] Wire all existing `AnalyticsSummary` fields to dashboard widgets
-- [ ] Dashboard skeleton component + `loadingFallback` default
-- [ ] CSS theme variables + light/dark toggle
-- [ ] Fix metric grid + chart container
-- [ ] Custom date range in UI
-- [ ] `PATCH /api/sites/:id` + settings form (origins, exclude_paths, retention)
-- [ ] Copy-to-clipboard for keys
+- [x] Wire all existing `AnalyticsSummary` fields to dashboard widgets
+- [x] Dashboard skeleton component + `loadingFallback` default
+- [x] CSS theme variables + light/dark toggle
+- [x] Fix metric grid + chart container
+- [x] Custom date range in UI
+- [x] `PATCH /api/sites/:id` + settings form (origins, exclude_paths, retention)
+- [x] Copy-to-clipboard for keys
 
 ## Phase 2 — Configurable analytics (2–3 weeks)
 
-- [ ] `site_analytics_config` JSONB + collection profiles
-- [ ] SDK reads profile; respects enabled events
-- [ ] Dashboard widget toggles (localStorage → site config)
-- [ ] utm_term/content in summary SQL
-- [ ] Channel grouping for referrers
-- [ ] Expand CSV export
+- [x] `site_analytics_config` JSONB + collection profiles
+- [x] SDK reads profile; respects enabled events
+- [x] Dashboard widget toggles (localStorage → site config)
+- [x] utm_term/content in summary SQL
+- [x] Channel grouping for referrers
+- [x] Expand CSV export
 
 ## Phase 3 — Production hardening (2–3 weeks)
 

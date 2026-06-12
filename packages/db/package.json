@@ -13,6 +13,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "migrate": "node scripts/migrate.mjs",
     "db:migrate": "node scripts/migrate.mjs",
     "db:seed": "node scripts/seed.mjs"
   },

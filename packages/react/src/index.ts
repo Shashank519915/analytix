@@ -1,4 +1,10 @@
-export { AnalytixProvider, useAnalytixConfig, type AnalytixConfig } from "./AnalytixProvider";
+export {
+  AnalytixProvider,
+  useAnalytixConfig,
+  useAnalytixRuntime,
+  fetchPublicSiteConfig,
+  type AnalytixConfig,
+} from "./AnalytixProvider";
 export { AnalytixTracker, type AnalytixTrackerProps } from "./AnalytixTracker";
 export {
   trackPageView,

@@ -14,6 +14,7 @@ function publicSite(site: {
   exclude_paths: string[];
   allowed_origins: string[];
   retention_days: number;
+  analytics_config: import("@Shashank519915/analytix-core").SiteAnalyticsConfig;
   created_at: string;
 }) {
   return {
@@ -26,6 +27,7 @@ function publicSite(site: {
     exclude_paths: site.exclude_paths,
     allowed_origins: site.allowed_origins,
     retention_days: site.retention_days,
+    analytics_config: site.analytics_config,
     created_at: site.created_at,
   };
 }

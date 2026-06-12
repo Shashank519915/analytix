@@ -1,5 +1,12 @@
+import type { SiteAnalyticsConfig } from "./analytics-config";
+
 export type AnalyticsGranularity = "hour" | "day";
-export type AnalyticsEventType = "page_view" | "engagement" | "custom";
+export type AnalyticsEventType =
+  | "page_view"
+  | "engagement"
+  | "custom"
+  | "scroll_depth"
+  | "outbound_click";
 export type AnalyticsScope = "all" | "page" | "blog" | "article";
 
 export interface AnalyticsEventInput {
@@ -87,6 +94,9 @@ export interface AnalyticsSummary {
   utm_source_breakdown: Array<{ source: string; count: number }>;
   utm_medium_breakdown: Array<{ medium: string; count: number }>;
   utm_campaign_breakdown: Array<{ campaign: string; count: number }>;
+  utm_term_breakdown: Array<{ term: string; count: number }>;
+  utm_content_breakdown: Array<{ content: string; count: number }>;
+  channel_breakdown: Array<{ channel: string; count: number }>;
   previous_period?: PeriodComparison;
 }
 
@@ -100,6 +110,7 @@ export interface SiteRecord {
   exclude_paths: string[];
   allowed_origins: string[];
   retention_days: number;
+  analytics_config: SiteAnalyticsConfig;
   created_at: string;
 }
 

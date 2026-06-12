@@ -297,7 +297,7 @@ export async function getAnalyticsSummary(
       )
   `;
 
-  const [devices, browsers, osRows, languages, countries, regions, referrers, utmSources, utmMediums, utmCampaigns] =
+  const [devices, browsers, osRows, languages, countries, regions, referrers, utmSources, utmMediums, utmCampaigns, utmTerms, utmContents, channels] =
     await Promise.all([
       sql`SELECT COALESCE(NULLIF(metadata->>'device_type', ''), 'Unknown') AS device_type, COUNT(*)::int AS count FROM analytics_events WHERE ${breakdownWhere} GROUP BY 1 ORDER BY count DESC LIMIT 8`,
       sql`SELECT COALESCE(NULLIF(metadata->>'browser', ''), 'Unknown') AS browser, COUNT(*)::int AS count FROM analytics_events WHERE ${breakdownWhere} GROUP BY 1 ORDER BY count DESC LIMIT 8`,
@@ -309,6 +309,27 @@ export async function getAnalyticsSummary(
       sql`SELECT COALESCE(NULLIF(metadata->>'utm_source', ''), '(not set)') AS source, COUNT(*)::int AS count FROM analytics_events WHERE ${breakdownWhere} GROUP BY 1 ORDER BY count DESC LIMIT 10`,
       sql`SELECT COALESCE(NULLIF(metadata->>'utm_medium', ''), '(not set)') AS medium, COUNT(*)::int AS count FROM analytics_events WHERE ${breakdownWhere} GROUP BY 1 ORDER BY count DESC LIMIT 10`,
       sql`SELECT COALESCE(NULLIF(metadata->>'utm_campaign', ''), '(not set)') AS campaign, COUNT(*)::int AS count FROM analytics_events WHERE ${breakdownWhere} GROUP BY 1 ORDER BY count DESC LIMIT 10`,
+      sql`SELECT COALESCE(NULLIF(metadata->>'utm_term', ''), '(not set)') AS term, COUNT(*)::int AS count FROM analytics_events WHERE ${breakdownWhere} GROUP BY 1 ORDER BY count DESC LIMIT 10`,
+      sql`SELECT COALESCE(NULLIF(metadata->>'utm_content', ''), '(not set)') AS content, COUNT(*)::int AS count FROM analytics_events WHERE ${breakdownWhere} GROUP BY 1 ORDER BY count DESC LIMIT 10`,
+      sql`
+        SELECT channel, COUNT(*)::int AS count
+        FROM (
+          SELECT
+            CASE
+              WHEN LOWER(COALESCE(metadata->>'utm_medium', '')) IN ('cpc', 'ppc', 'paid', 'paid-social', 'cpm', 'display') THEN 'Paid'
+              WHEN LOWER(COALESCE(metadata->>'utm_medium', '')) = 'email' THEN 'Email'
+              WHEN COALESCE(NULLIF(metadata->>'referrer_host', ''), 'Direct') ILIKE 'Direct' THEN 'Direct'
+              WHEN LOWER(COALESCE(metadata->>'referrer_host', '')) ~ '(facebook|instagram|linkedin|twitter|t\\.co|x\\.com|reddit|tiktok|youtube|pinterest|threads\\.net)' THEN 'Social'
+              WHEN LOWER(COALESCE(metadata->>'referrer_host', '')) ~ '(google\\.|bing\\.|yahoo\\.|duckduckgo\\.|baidu\\.|yandex\\.|ecosia\\.)'
+                AND LOWER(COALESCE(metadata->>'utm_medium', '')) NOT IN ('cpc', 'ppc', 'paid') THEN 'Organic'
+              ELSE 'Referral'
+            END AS channel
+          FROM analytics_events
+          WHERE ${breakdownWhere}
+        ) grouped_channels
+        GROUP BY channel
+        ORDER BY count DESC
+      `,
     ]);
 
   const admin = firstRow<{ admin_page_views: number; admin_unique_visitors: number }>(adminRows)!;
@@ -340,26 +361,129 @@ export async function getAnalyticsSummary(
     utm_source_breakdown: asRows<AnalyticsSummary["utm_source_breakdown"][number]>(utmSources),
     utm_medium_breakdown: asRows<AnalyticsSummary["utm_medium_breakdown"][number]>(utmMediums),
     utm_campaign_breakdown: asRows<AnalyticsSummary["utm_campaign_breakdown"][number]>(utmCampaigns),
+    utm_term_breakdown: asRows<AnalyticsSummary["utm_term_breakdown"][number]>(utmTerms),
+    utm_content_breakdown: asRows<AnalyticsSummary["utm_content_breakdown"][number]>(utmContents),
+    channel_breakdown: asRows<AnalyticsSummary["channel_breakdown"][number]>(channels),
     previous_period,
   };
+}
+
+function csvCell(value: string | number): string {
+  const str = String(value);
+  if (/[",\n]/.test(str)) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+function csvSection(title: string, headers: string[], rows: Array<Array<string | number>>): string[] {
+  return [
+    title,
+    headers.join(","),
+    ...rows.map((row) => row.map(csvCell).join(",")),
+    "",
+  ];
 }
 
 export async function exportAnalyticsCsv(filters: AnalyticsFilters): Promise<string> {
   const summary = await getAnalyticsSummary(filters);
   const lines = [
-    "metric,value",
-    `total_page_views,${summary.total_page_views}`,
-    `unique_visitors,${summary.unique_visitors}`,
-    `total_sessions,${summary.total_sessions}`,
-    `bounce_rate,${summary.bounce_rate}`,
-    `pages_per_session,${summary.pages_per_session}`,
-    `avg_engagement_seconds,${summary.avg_engagement_seconds}`,
-    "",
-    "path,views,uniques",
-    ...summary.top_paths.map((r: { path: string; views: number; uniques: number }) => `${r.path},${r.views},${r.uniques}`),
-    "",
-    "content_slug,content_title,views",
-    ...summary.top_content.map((r: { content_slug: string; content_title: string; views: number }) => `${r.content_slug},${r.content_title},${r.views}`),
+    ...csvSection("summary", ["metric", "value"], [
+      ["total_page_views", summary.total_page_views],
+      ["unique_visitors", summary.unique_visitors],
+      ["total_sessions", summary.total_sessions],
+      ["new_visitors", summary.new_visitors],
+      ["returning_visitors", summary.returning_visitors],
+      ["bounce_rate", summary.bounce_rate],
+      ["pages_per_session", summary.pages_per_session],
+      ["avg_engagement_seconds", summary.avg_engagement_seconds],
+      ["realtime_visitors", summary.realtime_visitors],
+    ]),
+    ...csvSection(
+      "top_paths",
+      ["path", "views", "uniques"],
+      summary.top_paths.map((r) => [r.path, r.views, r.uniques])
+    ),
+    ...csvSection(
+      "top_content",
+      ["content_id", "content_slug", "content_title", "views"],
+      summary.top_content.map((r) => [r.content_id, r.content_slug, r.content_title, r.views])
+    ),
+    ...csvSection(
+      "landing_pages",
+      ["path", "sessions"],
+      summary.landing_pages.map((r) => [r.path, r.sessions])
+    ),
+    ...csvSection(
+      "channels",
+      ["channel", "count"],
+      summary.channel_breakdown.map((r) => [r.channel, r.count])
+    ),
+    ...csvSection(
+      "referrers",
+      ["referrer", "count"],
+      summary.referrer_breakdown.map((r) => [r.referrer, r.count])
+    ),
+    ...csvSection(
+      "utm_source",
+      ["source", "count"],
+      summary.utm_source_breakdown.map((r) => [r.source, r.count])
+    ),
+    ...csvSection(
+      "utm_medium",
+      ["medium", "count"],
+      summary.utm_medium_breakdown.map((r) => [r.medium, r.count])
+    ),
+    ...csvSection(
+      "utm_campaign",
+      ["campaign", "count"],
+      summary.utm_campaign_breakdown.map((r) => [r.campaign, r.count])
+    ),
+    ...csvSection(
+      "utm_term",
+      ["term", "count"],
+      summary.utm_term_breakdown.map((r) => [r.term, r.count])
+    ),
+    ...csvSection(
+      "utm_content",
+      ["content", "count"],
+      summary.utm_content_breakdown.map((r) => [r.content, r.count])
+    ),
+    ...csvSection(
+      "countries",
+      ["country", "count"],
+      summary.country_breakdown.map((r) => [r.country, r.count])
+    ),
+    ...csvSection(
+      "regions",
+      ["region", "count"],
+      summary.region_breakdown.map((r) => [r.region, r.count])
+    ),
+    ...csvSection(
+      "languages",
+      ["language", "count"],
+      summary.language_breakdown.map((r) => [r.language, r.count])
+    ),
+    ...csvSection(
+      "devices",
+      ["device_type", "count"],
+      summary.device_breakdown.map((r) => [r.device_type, r.count])
+    ),
+    ...csvSection(
+      "browsers",
+      ["browser", "count"],
+      summary.browser_breakdown.map((r) => [r.browser, r.count])
+    ),
+    ...csvSection(
+      "operating_systems",
+      ["os", "count"],
+      summary.os_breakdown.map((r) => [r.os, r.count])
+    ),
+    ...csvSection(
+      "traffic_buckets",
+      ["bucket_start", "page_views", "unique_visitors"],
+      summary.buckets.map((r) => [r.bucket_start, r.page_views, r.unique_visitors])
+    ),
   ];
   return lines.join("\n");
 }

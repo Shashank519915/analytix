@@ -35,7 +35,10 @@ export default async function SiteAnalyticsPage({
 
       <SiteSettingsPanel site={site} collectUrl={collectUrl} />
 
-      <SiteAnalyticsSection siteId={site.id} />
+      <SiteAnalyticsSection
+        siteId={site.id}
+        defaultWidgets={site.analytics_config.dashboard_widgets}
+      />
     </main>
   );
 }

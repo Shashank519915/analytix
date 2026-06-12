@@ -1,3 +1,5 @@
+import type { PublicSiteConfig } from "@Shashank519915/analytix-core";
+import { isPublicFieldEnabled, shouldDropEventForSampling } from "@Shashank519915/analytix-core";
 import type { AnalytixConfig } from "./AnalytixProvider";
 
 function prefix(config: AnalytixConfig, key: string) {
@@ -57,16 +59,18 @@ export function buildClientFingerprint(config: AnalytixConfig): string {
   ].join("|");
 }
 
-export function collectUtmParams(): Record<string, string | null> {
-  if (typeof window === "undefined") {
-    return {
-      utm_source: null,
-      utm_medium: null,
-      utm_campaign: null,
-      utm_term: null,
-      utm_content: null,
-    };
-  }
+export function collectUtmParams(siteConfig?: PublicSiteConfig | null) {
+  const empty = {
+    utm_source: null,
+    utm_medium: null,
+    utm_campaign: null,
+    utm_term: null,
+    utm_content: null,
+  };
+
+  if (typeof window === "undefined") return empty;
+  if (siteConfig && !isPublicFieldEnabled(siteConfig, "utm")) return empty;
+
   const params = new URLSearchParams(window.location.search);
   return {
     utm_source: params.get("utm_source"),
@@ -77,7 +81,10 @@ export function collectUtmParams(): Record<string, string | null> {
   };
 }
 
-export function collectClientContext(config: AnalytixConfig) {
+export function collectClientContext(config: AnalytixConfig, siteConfig?: PublicSiteConfig | null) {
+  const includeDevice = !siteConfig || isPublicFieldEnabled(siteConfig, "device");
+  const includePerformance = !siteConfig || isPublicFieldEnabled(siteConfig, "performance");
+
   if (typeof window === "undefined") {
     return {
       session_id: "server",
@@ -92,7 +99,7 @@ export function collectClientContext(config: AnalytixConfig) {
       connection_type: null,
       accept_language: null,
       visitor_type: "new" as const,
-      utm: collectUtmParams(),
+      utm: collectUtmParams(siteConfig),
     };
   }
 
@@ -101,17 +108,17 @@ export function collectClientContext(config: AnalytixConfig) {
   return {
     session_id: getOrCreateSessionId(config),
     visitor_fingerprint: buildClientFingerprint(config),
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    screen_width: screen.width,
-    screen_height: screen.height,
-    viewport_width: window.innerWidth,
-    viewport_height: window.innerHeight,
-    device_pixel_ratio: window.devicePixelRatio,
-    platform: navigator.platform,
-    connection_type: connection?.effectiveType ?? null,
-    accept_language: navigator.language,
+    timezone: includeDevice ? Intl.DateTimeFormat().resolvedOptions().timeZone : null,
+    screen_width: includeDevice ? screen.width : null,
+    screen_height: includeDevice ? screen.height : null,
+    viewport_width: includePerformance ? window.innerWidth : null,
+    viewport_height: includePerformance ? window.innerHeight : null,
+    device_pixel_ratio: includePerformance ? window.devicePixelRatio : null,
+    platform: includeDevice ? navigator.platform : null,
+    connection_type: includePerformance ? (connection?.effectiveType ?? null) : null,
+    accept_language: includeDevice ? navigator.language : null,
     visitor_type: getVisitorType(config),
-    utm: collectUtmParams(),
+    utm: collectUtmParams(siteConfig),
   };
 }
 
@@ -132,20 +139,36 @@ async function sendPayload(config: AnalytixConfig, payload: Record<string, unkno
   }
 }
 
+function shouldClientSample(siteConfig?: PublicSiteConfig | null): boolean {
+  if (!siteConfig) return false;
+  return shouldDropEventForSampling({
+    collection_profile: siteConfig.collection_profile,
+    enabled_events: siteConfig.enabled_events,
+    enabled_fields: siteConfig.enabled_fields,
+    sample_rate: siteConfig.sample_rate,
+    consent_required: siteConfig.consent_required,
+    dashboard_widgets: siteConfig.dashboard_widgets,
+    dashboard_theme: siteConfig.dashboard_theme,
+  });
+}
+
 export async function trackPageView(
   config: AnalytixConfig,
   path: string,
-  content?: { id?: string; slug?: string; title?: string }
+  content?: { id?: string; slug?: string; title?: string },
+  siteConfig?: PublicSiteConfig | null
 ) {
   if (typeof window === "undefined") return;
+  if (shouldClientSample(siteConfig)) return;
 
-  const ctx = collectClientContext(config);
+  const ctx = collectClientContext(config, siteConfig);
+  const includeContent = !siteConfig || isPublicFieldEnabled(siteConfig, "content");
   const ok = await sendPayload(config, {
     event_type: "page_view",
     path,
-    content_id: content?.id ?? null,
-    content_slug: content?.slug ?? null,
-    content_title: content?.title ?? null,
+    content_id: includeContent ? (content?.id ?? null) : null,
+    content_slug: includeContent ? (content?.slug ?? null) : null,
+    content_title: includeContent ? (content?.title ?? null) : null,
     referrer: document.referrer || null,
     user_agent: navigator.userAgent,
     session_id: ctx.session_id,
@@ -176,17 +199,20 @@ export function trackEngagement(
   config: AnalytixConfig,
   path: string,
   durationMs: number,
+  siteConfig?: PublicSiteConfig | null,
   content?: { id?: string; slug?: string; title?: string }
 ) {
   if (typeof window === "undefined" || durationMs < 1000) return;
+  if (shouldClientSample(siteConfig)) return;
 
-  const ctx = collectClientContext(config);
+  const ctx = collectClientContext(config, siteConfig);
+  const includeContent = !siteConfig || isPublicFieldEnabled(siteConfig, "content");
   void sendPayload(config, {
     event_type: "engagement",
     path,
-    content_id: content?.id ?? null,
-    content_slug: content?.slug ?? null,
-    content_title: content?.title ?? null,
+    content_id: includeContent ? (content?.id ?? null) : null,
+    content_slug: includeContent ? (content?.slug ?? null) : null,
+    content_title: includeContent ? (content?.title ?? null) : null,
     referrer: document.referrer || null,
     user_agent: navigator.userAgent,
     session_id: ctx.session_id,
@@ -212,10 +238,13 @@ export function trackCustomEvent(
   config: AnalytixConfig,
   path: string,
   eventName: string,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
+  siteConfig?: PublicSiteConfig | null
 ) {
   if (typeof window === "undefined") return;
-  const ctx = collectClientContext(config);
+  if (shouldClientSample(siteConfig)) return;
+
+  const ctx = collectClientContext(config, siteConfig);
   void sendPayload(config, {
     event_type: "custom",
     path,

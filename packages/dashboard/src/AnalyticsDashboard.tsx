@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { AnalyticsSummary } from "@Shashank519915/analytix-core";
-import { percentChange } from "@Shashank519915/analytix-core";
+import type { AnalyticsSummary, DashboardWidgetId } from "@Shashank519915/analytix-core";
+import { DEFAULT_DASHBOARD_WIDGETS, percentChange } from "@Shashank519915/analytix-core";
 import {
   Area,
   CartesianGrid,
@@ -25,8 +25,11 @@ import {
   UserCheck,
   Moon,
   Sun,
+  SlidersHorizontal,
 } from "lucide-react";
 import { AnalyticsDashboardSkeleton } from "./AnalyticsDashboardSkeleton";
+import { useDashboardWidgets } from "./useDashboardWidgets";
+import { WidgetCustomizePanel } from "./WidgetCustomizePanel";
 
 type RangeKey = "24h" | "7d" | "30d" | "90d";
 type Granularity = "hour" | "day";
@@ -41,6 +44,10 @@ export interface AnalyticsDashboardProps {
   loadingFallback?: ReactNode;
   /** Initial theme. Defaults to system preference. */
   defaultTheme?: ThemeMode;
+  /** Site-default widget layout (overridden by localStorage when set). */
+  defaultWidgets?: DashboardWidgetId[];
+  /** PATCH endpoint to persist widget layout as site default. */
+  settingsEndpoint?: string;
 }
 
 function formatBucketLabel(value: string, granularity: Granularity) {
@@ -125,6 +132,8 @@ export function AnalyticsDashboard({
   exportEndpoint,
   loadingFallback,
   defaultTheme = "system",
+  defaultWidgets = DEFAULT_DASHBOARD_WIDGETS,
+  settingsEndpoint,
 }: AnalyticsDashboardProps) {
   const summaryUrl = summaryEndpoint ?? `/api/v1/sites/${siteId}/summary`;
   const exportUrl = exportEndpoint ?? `/api/v1/sites/${siteId}/export`;
@@ -147,6 +156,12 @@ export function AnalyticsDashboard({
   const [themeMode, setThemeMode] = useState<ThemeMode>(defaultTheme);
   const resolvedTheme = useResolvedTheme(themeMode);
   const hasLoadedRef = useRef(false);
+  const [showWidgetCustomize, setShowWidgetCustomize] = useState(false);
+  const [savingDefaultWidgets, setSavingDefaultWidgets] = useState(false);
+  const { widgets, toggleWidget, resetToDefault, isVisible } = useDashboardWidgets(
+    siteId,
+    defaultWidgets
+  );
 
   const filterParams = useMemo(() => {
     const params = new URLSearchParams({
@@ -270,11 +285,33 @@ export function AnalyticsDashboard({
   const areaStroke = resolvedTheme === "dark" ? "#60a5fa" : "#0052ff";
   const lineStroke = resolvedTheme === "dark" ? "#34d399" : "#059669";
 
+  async function saveDefaultWidgets() {
+    if (!settingsEndpoint) return;
+    setSavingDefaultWidgets(true);
+    try {
+      await fetch(settingsEndpoint, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ analytics_config: { dashboard_widgets: widgets } }),
+      });
+    } finally {
+      setSavingDefaultWidgets(false);
+    }
+  }
+
   return (
     <div className={`analytix-dash ${themeClass}${refreshing ? " analytix-refreshing" : ""}`}>
       <div className="toolbar">
         <span className="realtime">{summary.realtime_visitors} visitors in the last 15 minutes</span>
         <div className="toolbarActions">
+          <button
+            type="button"
+            className="btn btnIcon"
+            onClick={() => setShowWidgetCustomize((open) => !open)}
+            aria-label="Customize widgets"
+          >
+            <SlidersHorizontal size={16} />
+          </button>
           <button
             type="button"
             className="btn btnIcon"
@@ -295,6 +332,16 @@ export function AnalyticsDashboard({
           </a>
         </div>
       </div>
+
+      {showWidgetCustomize ? (
+        <WidgetCustomizePanel
+          widgets={widgets}
+          onToggle={toggleWidget}
+          onReset={resetToDefault}
+          onSaveDefault={settingsEndpoint ? saveDefaultWidgets : undefined}
+          savingDefault={savingDefaultWidgets}
+        />
+      ) : null}
 
       <div className="filters">
         <div className="filterGroup filterGroupWide">
@@ -407,6 +454,7 @@ export function AnalyticsDashboard({
         )}
       </div>
 
+      {isVisible("metrics") ? (
       <div className="metrics">
         <div className="metricCard">
           <Eye size={18} />
@@ -454,7 +502,9 @@ export function AnalyticsDashboard({
           <Delta current={summary.avg_engagement_seconds} previous={prev?.avg_engagement_seconds} />
         </div>
       </div>
+      ) : null}
 
+      {isVisible("chart") ? (
       <div className="chartPanel">
         <div className="panelTitle">Traffic over time</div>
         <div className="chartContainer">
@@ -483,142 +533,195 @@ export function AnalyticsDashboard({
           </ResponsiveContainer>
         </div>
       </div>
+      ) : null}
 
-      <div className="splitPanels">
-        <BreakdownPanel
-          title="Top paths"
-          emptyMessage="No path data for this period."
-          rows={summary.top_paths.map((row) => ({
-            key: row.path,
-            label: row.path,
-            value: `${formatNumber(row.views)} views · ${formatNumber(row.uniques)} uniques`,
-          }))}
-        />
-        <BreakdownPanel
-          title="Top content"
-          emptyMessage="No content data for this period."
-          rows={summary.top_content.map((row) => ({
-            key: row.content_id || row.content_slug || row.content_title,
-            label: row.content_title || row.content_slug || row.content_id,
-            value: `${formatNumber(row.views)} views`,
-          }))}
-        />
-      </div>
+      {isVisible("top_paths") || isVisible("top_content") ? (
+        <div className="splitPanels">
+          {isVisible("top_paths") ? (
+            <BreakdownPanel
+              title="Top paths"
+              emptyMessage="No path data for this period."
+              rows={summary.top_paths.map((row) => ({
+                key: row.path,
+                label: row.path,
+                value: `${formatNumber(row.views)} views · ${formatNumber(row.uniques)} uniques`,
+              }))}
+            />
+          ) : null}
+          {isVisible("top_content") ? (
+            <BreakdownPanel
+              title="Top content"
+              emptyMessage="No content data for this period."
+              rows={summary.top_content.map((row) => ({
+                key: row.content_id || row.content_slug || row.content_title,
+                label: row.content_title || row.content_slug || row.content_id,
+                value: `${formatNumber(row.views)} views`,
+              }))}
+            />
+          ) : null}
+        </div>
+      ) : null}
 
-      <div className="splitPanels">
-        <BreakdownPanel
-          title="Landing pages"
-          emptyMessage="No landing page data for this period."
-          rows={summary.landing_pages.map((row) => ({
-            key: row.path,
-            label: row.path,
-            value: `${formatNumber(row.sessions)} sessions`,
-          }))}
-        />
-        <BreakdownPanel
-          title="Top referrers"
-          emptyMessage="No referrer data for this period."
-          rows={summary.referrer_breakdown.map((row) => ({
-            key: row.referrer,
-            label: row.referrer,
-            value: formatNumber(row.count),
-          }))}
-        />
-      </div>
+      {isVisible("landing_pages") || isVisible("referrers") || isVisible("channels") ? (
+        <div className="splitPanels">
+          {isVisible("landing_pages") ? (
+            <BreakdownPanel
+              title="Landing pages"
+              emptyMessage="No landing page data for this period."
+              rows={summary.landing_pages.map((row) => ({
+                key: row.path,
+                label: row.path,
+                value: `${formatNumber(row.sessions)} sessions`,
+              }))}
+            />
+          ) : null}
+          {isVisible("referrers") ? (
+            <BreakdownPanel
+              title="Top referrers"
+              emptyMessage="No referrer data for this period."
+              rows={summary.referrer_breakdown.map((row) => ({
+                key: row.referrer,
+                label: row.referrer,
+                value: formatNumber(row.count),
+              }))}
+            />
+          ) : null}
+          {isVisible("channels") ? (
+            <BreakdownPanel
+              title="Traffic channels"
+              emptyMessage="No channel data for this period."
+              rows={summary.channel_breakdown.map((row) => ({
+                key: row.channel,
+                label: row.channel,
+                value: formatNumber(row.count),
+              }))}
+            />
+          ) : null}
+        </div>
+      ) : null}
 
-      <div className="splitPanels">
-        <BreakdownPanel
-          title="UTM source"
-          emptyMessage="No UTM source data for this period."
-          rows={summary.utm_source_breakdown.map((row) => ({
-            key: row.source,
-            label: row.source,
-            value: formatNumber(row.count),
-          }))}
-        />
-        <BreakdownPanel
-          title="UTM medium"
-          emptyMessage="No UTM medium data for this period."
-          rows={summary.utm_medium_breakdown.map((row) => ({
-            key: row.medium,
-            label: row.medium,
-            value: formatNumber(row.count),
-          }))}
-        />
-      </div>
+      {isVisible("utm") ? (
+        <>
+          <div className="splitPanels">
+            <BreakdownPanel
+              title="UTM source"
+              emptyMessage="No UTM source data for this period."
+              rows={summary.utm_source_breakdown.map((row) => ({
+                key: row.source,
+                label: row.source,
+                value: formatNumber(row.count),
+              }))}
+            />
+            <BreakdownPanel
+              title="UTM medium"
+              emptyMessage="No UTM medium data for this period."
+              rows={summary.utm_medium_breakdown.map((row) => ({
+                key: row.medium,
+                label: row.medium,
+                value: formatNumber(row.count),
+              }))}
+            />
+          </div>
+          <div className="splitPanels">
+            <BreakdownPanel
+              title="UTM campaign"
+              emptyMessage="No UTM campaign data for this period."
+              rows={summary.utm_campaign_breakdown.map((row) => ({
+                key: row.campaign,
+                label: row.campaign,
+                value: formatNumber(row.count),
+              }))}
+            />
+            <BreakdownPanel
+              title="UTM term"
+              emptyMessage="No UTM term data for this period."
+              rows={summary.utm_term_breakdown.map((row) => ({
+                key: row.term,
+                label: row.term,
+                value: formatNumber(row.count),
+              }))}
+            />
+          </div>
+          <BreakdownPanel
+            title="UTM content"
+            emptyMessage="No UTM content data for this period."
+            rows={summary.utm_content_breakdown.map((row) => ({
+              key: row.content,
+              label: row.content,
+              value: formatNumber(row.count),
+            }))}
+          />
+        </>
+      ) : null}
 
-      <div className="splitPanels">
-        <BreakdownPanel
-          title="UTM campaign"
-          emptyMessage="No UTM campaign data for this period."
-          rows={summary.utm_campaign_breakdown.map((row) => ({
-            key: row.campaign,
-            label: row.campaign,
-            value: formatNumber(row.count),
-          }))}
-        />
-        <BreakdownPanel
-          title="Countries"
-          emptyMessage="No geo data for this period."
-          rows={summary.country_breakdown.map((row) => ({
-            key: row.country,
-            label: row.country,
-            value: formatNumber(row.count),
-          }))}
-        />
-      </div>
+      {isVisible("geo") ? (
+        <>
+          <div className="splitPanels">
+            <BreakdownPanel
+              title="Countries"
+              emptyMessage="No geo data for this period."
+              rows={summary.country_breakdown.map((row) => ({
+                key: row.country,
+                label: row.country,
+                value: formatNumber(row.count),
+              }))}
+            />
+            <BreakdownPanel
+              title="Regions"
+              emptyMessage="No region data for this period."
+              rows={summary.region_breakdown.map((row) => ({
+                key: row.region,
+                label: row.region,
+                value: formatNumber(row.count),
+              }))}
+            />
+          </div>
+          <BreakdownPanel
+            title="Languages"
+            emptyMessage="No language data for this period."
+            rows={summary.language_breakdown.map((row) => ({
+              key: row.language,
+              label: row.language,
+              value: formatNumber(row.count),
+            }))}
+          />
+        </>
+      ) : null}
 
-      <div className="splitPanels">
-        <BreakdownPanel
-          title="Regions"
-          emptyMessage="No region data for this period."
-          rows={summary.region_breakdown.map((row) => ({
-            key: row.region,
-            label: row.region,
-            value: formatNumber(row.count),
-          }))}
-        />
-        <BreakdownPanel
-          title="Languages"
-          emptyMessage="No language data for this period."
-          rows={summary.language_breakdown.map((row) => ({
-            key: row.language,
-            label: row.language,
-            value: formatNumber(row.count),
-          }))}
-        />
-      </div>
+      {isVisible("devices") ? (
+        <div className="splitPanels">
+          <BreakdownPanel
+            title="Devices"
+            emptyMessage="No device data for this period."
+            rows={summary.device_breakdown.map((row) => ({
+              key: row.device_type,
+              label: row.device_type,
+              value: formatNumber(row.count),
+            }))}
+          />
+          <BreakdownPanel
+            title="Browsers"
+            emptyMessage="No browser data for this period."
+            rows={summary.browser_breakdown.map((row) => ({
+              key: row.browser,
+              label: row.browser,
+              value: formatNumber(row.count),
+            }))}
+          />
+        </div>
+      ) : null}
 
-      <div className="splitPanels">
+      {isVisible("os") ? (
         <BreakdownPanel
-          title="Devices"
-          emptyMessage="No device data for this period."
-          rows={summary.device_breakdown.map((row) => ({
-            key: row.device_type,
-            label: row.device_type,
+          title="Operating systems"
+          emptyMessage="No OS data for this period."
+          rows={summary.os_breakdown.map((row) => ({
+            key: row.os,
+            label: row.os,
             value: formatNumber(row.count),
           }))}
         />
-        <BreakdownPanel
-          title="Browsers"
-          emptyMessage="No browser data for this period."
-          rows={summary.browser_breakdown.map((row) => ({
-            key: row.browser,
-            label: row.browser,
-            value: formatNumber(row.count),
-          }))}
-        />
-      </div>
-
-      <BreakdownPanel
-        title="Operating systems"
-        emptyMessage="No OS data for this period."
-        rows={summary.os_breakdown.map((row) => ({
-          key: row.os,
-          label: row.os,
-          value: formatNumber(row.count),
-        }))}
-      />
+      ) : null}
     </div>
   );
 }

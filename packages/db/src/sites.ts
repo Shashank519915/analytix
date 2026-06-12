@@ -1,5 +1,11 @@
-import { generateApiSecret, generateSiteKey } from "@Shashank519915/analytix-core";
-import type { SiteRecord } from "@Shashank519915/analytix-core";
+import {
+  DEFAULT_SITE_ANALYTICS_CONFIG,
+  generateApiSecret,
+  generateSiteKey,
+  mergeAnalyticsConfig,
+  toPublicSiteConfig,
+} from "@Shashank519915/analytix-core";
+import type { PublicSiteConfig, SiteAnalyticsConfig, SiteRecord } from "@Shashank519915/analytix-core";
 import { getDb } from "./client";
 import { firstRow, asRows } from "./rows";
 
@@ -14,6 +20,9 @@ function parseSiteRow(row: Record<string, unknown>): SiteRecord {
     exclude_paths: (row.exclude_paths as string[]) ?? [],
     allowed_origins: (row.allowed_origins as string[]) ?? [],
     retention_days: row.retention_days as number,
+    analytics_config: mergeAnalyticsConfig(
+      (row.analytics_config as Partial<SiteAnalyticsConfig> | null) ?? DEFAULT_SITE_ANALYTICS_CONFIG
+    ),
     created_at: row.created_at as string,
   };
 }
@@ -33,9 +42,12 @@ export async function createSite(
   const api_secret = generateApiSecret();
   const exclude_paths = JSON.stringify(input.exclude_paths ?? ["/admin*", "/blog/preview*"]);
   const allowed_origins = JSON.stringify(input.allowed_origins ?? []);
+  const analytics_config = JSON.stringify(DEFAULT_SITE_ANALYTICS_CONFIG);
 
   const rows = await sql`
-    INSERT INTO sites (account_id, name, domain, site_key, api_secret, exclude_paths, allowed_origins, retention_days)
+    INSERT INTO sites (
+      account_id, name, domain, site_key, api_secret, exclude_paths, allowed_origins, retention_days, analytics_config
+    )
     VALUES (
       ${accountId}::uuid,
       ${input.name},
@@ -44,7 +56,8 @@ export async function createSite(
       ${api_secret},
       ${exclude_paths}::jsonb,
       ${allowed_origins}::jsonb,
-      ${input.retention_days ?? 365}
+      ${input.retention_days ?? 365},
+      ${analytics_config}::jsonb
     )
     RETURNING *
   `;
@@ -91,6 +104,7 @@ export async function updateSite(
     exclude_paths?: string[];
     allowed_origins?: string[];
     retention_days?: number;
+    analytics_config?: Partial<import("@Shashank519915/analytix-core").SiteAnalyticsConfig>;
   }
 ): Promise<SiteRecord | null> {
   const sql = getDb();
@@ -102,6 +116,12 @@ export async function updateSite(
   const exclude_paths = JSON.stringify(input.exclude_paths ?? current.exclude_paths);
   const allowed_origins = JSON.stringify(input.allowed_origins ?? current.allowed_origins);
   const retention_days = input.retention_days ?? current.retention_days;
+  const analytics_config = JSON.stringify(
+    mergeAnalyticsConfig({
+      ...current.analytics_config,
+      ...(input.analytics_config ?? {}),
+    })
+  );
 
   const rows = await sql`
     UPDATE sites
@@ -110,13 +130,21 @@ export async function updateSite(
       domain = ${domain},
       exclude_paths = ${exclude_paths}::jsonb,
       allowed_origins = ${allowed_origins}::jsonb,
-      retention_days = ${retention_days}
+      retention_days = ${retention_days},
+      analytics_config = ${analytics_config}::jsonb
     WHERE id = ${siteId}::uuid
     RETURNING *
   `;
   const row = firstRow<Record<string, unknown>>(rows);
   if (!row) return null;
   return parseSiteRow(row);
+}
+
+export function getPublicSiteConfig(site: SiteRecord): PublicSiteConfig {
+  return toPublicSiteConfig({
+    analytics_config: site.analytics_config,
+    exclude_paths: site.exclude_paths,
+  });
 }
 
 export async function regenerateSiteKeys(siteId: string): Promise<SiteRecord | null> {

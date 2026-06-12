@@ -1,7 +1,10 @@
 import { z } from "zod";
+import { DASHBOARD_WIDGET_IDS } from "./analytics-config";
 
 export const collectEventSchema = z.object({
-  event_type: z.enum(["page_view", "engagement", "custom"]).optional(),
+  event_type: z
+    .enum(["page_view", "engagement", "custom", "scroll_depth", "outbound_click"])
+    .optional(),
   path: z.string().min(1).max(500),
   content_id: z.string().max(120).nullable().optional(),
   content_slug: z.string().max(200).nullable().optional(),
@@ -42,6 +45,23 @@ export const createSiteSchema = z.object({
   retention_days: z.number().int().min(30).max(730).optional(),
 });
 
+export const siteAnalyticsConfigSchema = z.object({
+  collection_profile: z.enum(["minimal", "standard", "full", "custom"]).optional(),
+  enabled_events: z
+    .array(z.enum(["page_view", "engagement", "scroll_depth", "outbound_click", "custom"]))
+    .optional(),
+  enabled_fields: z.array(z.enum(["geo", "utm", "device", "performance", "content"])).optional(),
+  sample_rate: z.number().min(0).max(1).optional(),
+  consent_required: z.boolean().optional(),
+  dashboard_widgets: z.array(z.enum(DASHBOARD_WIDGET_IDS)).optional(),
+  dashboard_theme: z
+    .object({
+      mode: z.enum(["light", "dark", "system"]).optional(),
+      accent: z.string().max(40).optional(),
+    })
+    .optional(),
+});
+
 export const updateSiteSchema = z
   .object({
     name: z.string().min(1).max(120).optional(),
@@ -49,6 +69,7 @@ export const updateSiteSchema = z
     exclude_paths: z.array(z.string().max(200)).optional(),
     allowed_origins: z.array(z.string().max(200)).optional(),
     retention_days: z.number().int().min(30).max(730).optional(),
+    analytics_config: siteAnalyticsConfigSchema.optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field is required",

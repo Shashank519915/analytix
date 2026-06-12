@@ -5,7 +5,10 @@ import {
   extractClientIp,
   extractGeoFromRequest,
   hashIp,
+  isEventEnabled,
   isOriginAllowed,
+  isPathExcluded,
+  shouldDropEventForSampling,
 } from "@Shashank519915/analytix-core";
 import {
   getSiteBySiteKey,
@@ -71,6 +74,18 @@ export async function POST(request: Request) {
     const ipHash = hashIp(ip);
     const geo = extractGeoFromRequest(request);
     const eventType = body.event_type ?? "page_view";
+
+    if (isPathExcluded(body.path, site.exclude_paths)) {
+      return jsonWithCors({ ok: true, skipped: "excluded_path" }, 200, origin, site.allowed_origins);
+    }
+
+    if (!isEventEnabled(site.analytics_config, eventType)) {
+      return jsonWithCors({ ok: true, skipped: "event_disabled" }, 200, origin, site.allowed_origins);
+    }
+
+    if (shouldDropEventForSampling(site.analytics_config)) {
+      return jsonWithCors({ ok: true, sampled: true }, 200, origin, site.allowed_origins);
+    }
 
     if (await incrementRateLimit(site.id, ipHash)) {
       return jsonWithCors({ error: "Rate limit exceeded" }, 429, origin, site.allowed_origins);

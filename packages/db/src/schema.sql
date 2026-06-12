@@ -18,8 +18,11 @@ CREATE TABLE IF NOT EXISTS sites (
   exclude_paths JSONB NOT NULL DEFAULT '[]'::jsonb,
   allowed_origins JSONB NOT NULL DEFAULT '[]'::jsonb,
   retention_days INT NOT NULL DEFAULT 365,
+  analytics_config JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE sites ADD COLUMN IF NOT EXISTS analytics_config JSONB NOT NULL DEFAULT '{}'::jsonb;
 
 CREATE INDEX IF NOT EXISTS idx_sites_account ON sites (account_id);
 CREATE INDEX IF NOT EXISTS idx_sites_site_key ON sites (site_key);

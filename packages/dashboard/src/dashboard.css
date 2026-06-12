@@ -378,3 +378,24 @@
     grid-template-columns: 1fr;
   }
 }
+
+.analytix-dash .widgetCustomize .widgetGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.analytix-dash .widgetToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--ax-muted);
+}
+
+.analytix-dash .widgetActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

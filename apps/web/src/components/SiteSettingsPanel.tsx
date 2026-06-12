@@ -1,8 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import type { SiteRecord } from "@Shashank519915/analytix-core";
+import type {
+  CollectionEventType,
+  CollectionFieldGroup,
+  CollectionProfile,
+  DashboardWidgetId,
+  SiteRecord,
+} from "@Shashank519915/analytix-core";
+import {
+  DASHBOARD_WIDGET_IDS,
+  DASHBOARD_WIDGET_LABELS,
+  DEFAULT_DASHBOARD_WIDGETS,
+} from "@Shashank519915/analytix-core";
 import { CopyButton } from "./CopyButton";
+
+const EVENT_OPTIONS: CollectionEventType[] = [
+  "page_view",
+  "engagement",
+  "scroll_depth",
+  "outbound_click",
+  "custom",
+];
+
+const FIELD_OPTIONS: CollectionFieldGroup[] = ["geo", "utm", "device", "performance", "content"];
 
 function linesToArray(value: string) {
   return value
@@ -13,6 +34,10 @@ function linesToArray(value: string) {
 
 function arrayToLines(values: string[]) {
   return values.join("\n");
+}
+
+function toggleInList<T extends string>(list: T[], value: T): T[] {
+  return list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
 }
 
 export function SiteSettingsPanel({
@@ -27,6 +52,20 @@ export function SiteSettingsPanel({
   const [allowedOrigins, setAllowedOrigins] = useState(arrayToLines(site.allowed_origins));
   const [excludePaths, setExcludePaths] = useState(arrayToLines(site.exclude_paths));
   const [retentionDays, setRetentionDays] = useState(String(site.retention_days));
+  const [collectionProfile, setCollectionProfile] = useState<CollectionProfile>(
+    site.analytics_config.collection_profile
+  );
+  const [enabledEvents, setEnabledEvents] = useState<CollectionEventType[]>(
+    site.analytics_config.enabled_events
+  );
+  const [enabledFields, setEnabledFields] = useState<CollectionFieldGroup[]>(
+    site.analytics_config.enabled_fields
+  );
+  const [sampleRate, setSampleRate] = useState(String(site.analytics_config.sample_rate));
+  const [consentRequired, setConsentRequired] = useState(site.analytics_config.consent_required);
+  const [dashboardWidgets, setDashboardWidgets] = useState<DashboardWidgetId[]>(
+    site.analytics_config.dashboard_widgets
+  );
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -38,8 +77,14 @@ export function SiteSettingsPanel({
     setError("");
 
     const retention = Number.parseInt(retentionDays, 10);
+    const sample = Number.parseFloat(sampleRate);
     if (!Number.isFinite(retention) || retention < 30 || retention > 730) {
       setError("Retention must be between 30 and 730 days.");
+      setSaving(false);
+      return;
+    }
+    if (!Number.isFinite(sample) || sample < 0 || sample > 1) {
+      setError("Sample rate must be between 0 and 1.");
       setSaving(false);
       return;
     }
@@ -54,6 +99,14 @@ export function SiteSettingsPanel({
           allowed_origins: linesToArray(allowedOrigins),
           exclude_paths: linesToArray(excludePaths),
           retention_days: retention,
+          analytics_config: {
+            collection_profile: collectionProfile,
+            enabled_events: enabledEvents,
+            enabled_fields: enabledFields,
+            sample_rate: sample,
+            consent_required: consentRequired,
+            dashboard_widgets: dashboardWidgets,
+          },
         }),
       });
 
@@ -80,6 +133,13 @@ export function SiteSettingsPanel({
           <div className="secretRow">
             <span>{collectUrl}</span>
             <CopyButton value={collectUrl} />
+          </div>
+        </div>
+        <div>
+          <strong>Config endpoint (SDK)</strong>
+          <div className="secretRow">
+            <span>{collectUrl.replace("/collect", "/config")}</span>
+            <CopyButton value={collectUrl.replace("/collect", "/config")} />
           </div>
         </div>
         <div>
@@ -150,6 +210,107 @@ export function SiteSettingsPanel({
           />
         </div>
 
+        <hr style={{ border: 0, borderTop: "1px solid var(--border)", margin: "8px 0" }} />
+
+        <h3 style={{ margin: 0 }}>Collection profile</h3>
+        <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.875rem" }}>
+          Controls what the SDK collects. Presets apply unless profile is set to custom.
+        </p>
+
+        <div className="field">
+          <label htmlFor="collection-profile">Profile</label>
+          <select
+            id="collection-profile"
+            value={collectionProfile}
+            onChange={(e) => setCollectionProfile(e.target.value as CollectionProfile)}
+          >
+            <option value="minimal">Minimal — page views only</option>
+            <option value="standard">Standard — page views + engagement + device</option>
+            <option value="full">Full — all events and fields</option>
+            <option value="custom">Custom — manual toggles below</option>
+          </select>
+        </div>
+
+        {collectionProfile === "custom" ? (
+          <>
+            <div className="field">
+              <span className="fieldLabel">Enabled events</span>
+              <div className="checkboxGrid">
+                {EVENT_OPTIONS.map((event) => (
+                  <label key={event}>
+                    <input
+                      type="checkbox"
+                      checked={enabledEvents.includes(event)}
+                      onChange={() => setEnabledEvents(toggleInList(enabledEvents, event))}
+                    />
+                    {event}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="field">
+              <span className="fieldLabel">Enabled field groups</span>
+              <div className="checkboxGrid">
+                {FIELD_OPTIONS.map((field) => (
+                  <label key={field}>
+                    <input
+                      type="checkbox"
+                      checked={enabledFields.includes(field)}
+                      onChange={() => setEnabledFields(toggleInList(enabledFields, field))}
+                    />
+                    {field}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : null}
+
+        <div className="field">
+          <label htmlFor="sample-rate">Sample rate (0–1)</label>
+          <input
+            id="sample-rate"
+            type="number"
+            min={0}
+            max={1}
+            step={0.01}
+            value={sampleRate}
+            onChange={(e) => setSampleRate(e.target.value)}
+          />
+        </div>
+
+        <label className="checkboxRow">
+          <input
+            type="checkbox"
+            checked={consentRequired}
+            onChange={(e) => setConsentRequired(e.target.checked)}
+          />
+          Require consent before tracking (SDK waits for grantConsent())
+        </label>
+
+        <div className="field">
+          <span className="fieldLabel">Default dashboard widgets</span>
+          <div className="checkboxGrid">
+            {DASHBOARD_WIDGET_IDS.map((widget) => (
+              <label key={widget}>
+                <input
+                  type="checkbox"
+                  checked={dashboardWidgets.includes(widget)}
+                  onChange={() => setDashboardWidgets(toggleInList(dashboardWidgets, widget))}
+                />
+                {DASHBOARD_WIDGET_LABELS[widget]}
+              </label>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="btnSecondary"
+            onClick={() => setDashboardWidgets(DEFAULT_DASHBOARD_WIDGETS)}
+          >
+            Select all widgets
+          </button>
+        </div>
+
         {error ? <p className="error">{error}</p> : null}
         {message ? <p className="success">{message}</p> : null}
 
@@ -161,8 +322,8 @@ export function SiteSettingsPanel({
       </form>
 
       <p style={{ color: "var(--muted)", fontSize: "0.875rem", marginBottom: 0, marginTop: 20 }}>
-        Send the site key with <code>X-Analytix-Site-Key</code> when collecting events. Use the API
-        secret as a Bearer token for summary and export APIs.
+        Send the site key with <code>X-Analytix-Site-Key</code> when collecting events or fetching
+        config. Use the API secret as a Bearer token for summary and export APIs.
       </p>
     </div>
   );
