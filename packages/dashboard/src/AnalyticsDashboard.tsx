@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { AnalyticsSummary } from "@Shashank519915/analytix-core";
 import { percentChange } from "@Shashank519915/analytix-core";
 import {
@@ -13,18 +13,34 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Download, Eye, Users, Clock, MousePointerClick, Repeat } from "lucide-react";
+import {
+  Download,
+  Eye,
+  Users,
+  Clock,
+  MousePointerClick,
+  Repeat,
+  FileText,
+  UserPlus,
+  UserCheck,
+  Moon,
+  Sun,
+} from "lucide-react";
+import { AnalyticsDashboardSkeleton } from "./AnalyticsDashboardSkeleton";
 
 type RangeKey = "24h" | "7d" | "30d" | "90d";
 type Granularity = "hour" | "day";
 type TrafficScope = "all" | "page" | "blog";
+type ThemeMode = "light" | "dark" | "system";
 
 export interface AnalyticsDashboardProps {
   siteId: string;
   summaryEndpoint?: string;
   exportEndpoint?: string;
-  /** Shown while fetching summary data (e.g. site-branded skeleton). */
+  /** Shown while fetching summary data. Defaults to built-in skeleton. */
   loadingFallback?: ReactNode;
+  /** Initial theme. Defaults to system preference. */
+  defaultTheme?: ThemeMode;
 }
 
 function formatBucketLabel(value: string, granularity: Granularity) {
@@ -37,6 +53,10 @@ function formatBucketLabel(value: string, granularity: Granularity) {
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat().format(value);
+}
+
+function toDateInputValue(date: Date) {
+  return date.toISOString().slice(0, 10);
 }
 
 function Delta({ current, previous }: { current: number; previous?: number }) {
@@ -52,31 +72,94 @@ function Delta({ current, previous }: { current: number; previous?: number }) {
   );
 }
 
+function BreakdownPanel({
+  title,
+  emptyMessage,
+  rows,
+}: {
+  title: string;
+  emptyMessage: string;
+  rows: Array<{ key: string; label: ReactNode; value: ReactNode }>;
+}) {
+  return (
+    <div className="chartPanel">
+      <div className="panelTitle">{title}</div>
+      {rows.length === 0 ? (
+        <p className="emptyState">{emptyMessage}</p>
+      ) : (
+        <ul className="list">
+          {rows.map((row) => (
+            <li key={row.key}>
+              <span className="listLabel">{row.label}</span>
+              <span className="listValue">{row.value}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function useResolvedTheme(mode: ThemeMode) {
+  const [resolved, setResolved] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    if (mode !== "system") {
+      setResolved(mode);
+      return;
+    }
+
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => setResolved(media.matches ? "dark" : "light");
+    apply();
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, [mode]);
+
+  return resolved;
+}
+
 export function AnalyticsDashboard({
   siteId,
   summaryEndpoint,
   exportEndpoint,
   loadingFallback,
+  defaultTheme = "system",
 }: AnalyticsDashboardProps) {
   const summaryUrl = summaryEndpoint ?? `/api/v1/sites/${siteId}/summary`;
   const exportUrl = exportEndpoint ?? `/api/v1/sites/${siteId}/export`;
 
   const [range, setRange] = useState<RangeKey>("7d");
+  const [useCustomRange, setUseCustomRange] = useState(false);
+  const [customFrom, setCustomFrom] = useState(() =>
+    toDateInputValue(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
+  );
+  const [customTo, setCustomTo] = useState(() => toDateInputValue(new Date()));
   const [granularity, setGranularity] = useState<Granularity>("day");
   const [trafficScope, setTrafficScope] = useState<TrafficScope>("all");
   const [path, setPath] = useState("");
   const [contentId, setContentId] = useState("");
   const [includeBlogArticles, setIncludeBlogArticles] = useState(false);
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [themeMode, setThemeMode] = useState<ThemeMode>(defaultTheme);
+  const resolvedTheme = useResolvedTheme(themeMode);
+  const hasLoadedRef = useRef(false);
 
   const filterParams = useMemo(() => {
     const params = new URLSearchParams({
-      range,
       granularity,
       compare: "1",
     });
+
+    if (useCustomRange) {
+      params.set("from", new Date(`${customFrom}T00:00:00.000Z`).toISOString());
+      params.set("to", new Date(`${customTo}T23:59:59.999Z`).toISOString());
+    } else {
+      params.set("range", range);
+    }
 
     if (trafficScope === "page" && path.trim()) {
       params.set("scope", "page");
@@ -94,10 +177,26 @@ export function AnalyticsDashboard({
     }
 
     return params;
-  }, [range, granularity, trafficScope, path, contentId, includeBlogArticles]);
+  }, [
+    range,
+    useCustomRange,
+    customFrom,
+    customTo,
+    granularity,
+    trafficScope,
+    path,
+    contentId,
+    includeBlogArticles,
+  ]);
 
   useEffect(() => {
-    setLoading(true);
+    let cancelled = false;
+    const isFirstLoad = !hasLoadedRef.current;
+    if (isFirstLoad) {
+      setInitialLoading(true);
+    } else {
+      setRefreshing(true);
+    }
     setError("");
 
     fetch(`${summaryUrl}?${filterParams.toString()}`)
@@ -108,9 +207,25 @@ export function AnalyticsDashboard({
         }
         return res.json();
       })
-      .then((payload) => setSummary(payload.summary ?? payload))
-      .catch((err: Error) => setError(err.message))
-      .finally(() => setLoading(false));
+      .then((payload) => {
+        if (!cancelled) {
+          hasLoadedRef.current = true;
+          setSummary(payload.summary ?? payload);
+        }
+      })
+      .catch((err: Error) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setInitialLoading(false);
+          setRefreshing(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [summaryUrl, filterParams]);
 
   const chartData = useMemo(
@@ -123,17 +238,19 @@ export function AnalyticsDashboard({
     [summary, granularity]
   );
 
-  if (loading) {
+  const themeClass = resolvedTheme === "dark" ? "analytix-theme-dark" : "analytix-theme-light";
+
+  if (initialLoading) {
     return (
-      <div className="analytix-dash">
-        {loadingFallback ?? <p className="analytix-loading">Loading analytics…</p>}
+      <div className={`analytix-dash ${themeClass}`}>
+        {loadingFallback ?? <AnalyticsDashboardSkeleton />}
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="analytix-dash">
+      <div className={`analytix-dash ${themeClass}`}>
         <p className="error">{error}</p>
       </div>
     );
@@ -141,39 +258,92 @@ export function AnalyticsDashboard({
 
   if (!summary) {
     return (
-      <div className="analytix-dash">
-        <p>No analytics data yet.</p>
+      <div className={`analytix-dash ${themeClass}`}>
+        <p className="emptyState">No analytics data yet.</p>
       </div>
     );
   }
 
   const prev = summary.previous_period;
+  const gridStroke = resolvedTheme === "dark" ? "rgba(148,163,184,0.15)" : "rgba(15,23,42,0.08)";
+  const areaFill = resolvedTheme === "dark" ? "rgba(96,165,250,0.18)" : "rgba(0,82,255,0.12)";
+  const areaStroke = resolvedTheme === "dark" ? "#60a5fa" : "#0052ff";
+  const lineStroke = resolvedTheme === "dark" ? "#34d399" : "#059669";
 
   return (
-    <div className="analytix-dash">
+    <div className={`analytix-dash ${themeClass}${refreshing ? " analytix-refreshing" : ""}`}>
       <div className="toolbar">
         <span className="realtime">{summary.realtime_visitors} visitors in the last 15 minutes</span>
-        <a className="btn" href={`${exportUrl}?${filterParams.toString()}`}>
-          <Download size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />
-          Export CSV
-        </a>
+        <div className="toolbarActions">
+          <button
+            type="button"
+            className="btn btnIcon"
+            onClick={() =>
+              setThemeMode((current) =>
+                current === "dark" || (current === "system" && resolvedTheme === "dark")
+                  ? "light"
+                  : "dark"
+              )
+            }
+            aria-label="Toggle theme"
+          >
+            {resolvedTheme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+          <a className="btn" href={`${exportUrl}?${filterParams.toString()}`}>
+            <Download size={14} />
+            Export CSV
+          </a>
+        </div>
       </div>
 
       <div className="filters">
-        <div className="filterGroup">
+        <div className="filterGroup filterGroupWide">
           <span className="filterLabel">Range</span>
           <div className="chips">
             {(["24h", "7d", "30d", "90d"] as RangeKey[]).map((key) => (
               <button
                 key={key}
                 type="button"
-                className={range === key ? "chipActive" : "chip"}
-                onClick={() => setRange(key)}
+                className={!useCustomRange && range === key ? "chipActive" : "chip"}
+                onClick={() => {
+                  setUseCustomRange(false);
+                  setRange(key);
+                }}
               >
                 {key}
               </button>
             ))}
+            <button
+              type="button"
+              className={useCustomRange ? "chipActive" : "chip"}
+              onClick={() => setUseCustomRange(true)}
+            >
+              Custom
+            </button>
           </div>
+          {useCustomRange && (
+            <div className="dateRangeRow">
+              <label>
+                <span className="filterLabel">From</span>
+                <input
+                  type="date"
+                  value={customFrom}
+                  max={customTo}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                />
+              </label>
+              <label>
+                <span className="filterLabel">To</span>
+                <input
+                  type="date"
+                  value={customTo}
+                  min={customFrom}
+                  max={toDateInputValue(new Date())}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                />
+              </label>
+            </div>
+          )}
         </div>
 
         <div className="filterGroup">
@@ -211,18 +381,14 @@ export function AnalyticsDashboard({
         {trafficScope === "page" && (
           <div className="filterGroup filterGroupWide textField">
             <span className="filterLabel">Path</span>
-            <input
-              value={path}
-              onChange={(e) => setPath(e.target.value)}
-              placeholder="/pricing"
-            />
+            <input value={path} onChange={(e) => setPath(e.target.value)} placeholder="/pricing" />
             {path.trim() === "/blog" && (
-              <label>
+              <label className="checkboxRow">
                 <input
                   type="checkbox"
                   checked={includeBlogArticles}
                   onChange={(e) => setIncludeBlogArticles(e.target.checked)}
-                />{" "}
+                />
                 Include blog articles
               </label>
             )}
@@ -261,6 +427,21 @@ export function AnalyticsDashboard({
           <Delta current={summary.total_sessions} previous={prev?.total_sessions} />
         </div>
         <div className="metricCard">
+          <FileText size={18} />
+          <span className="metricValue">{summary.pages_per_session.toFixed(2)}</span>
+          <span className="metricLabel">Pages / session</span>
+        </div>
+        <div className="metricCard">
+          <UserPlus size={18} />
+          <span className="metricValue">{formatNumber(summary.new_visitors)}</span>
+          <span className="metricLabel">New visitors</span>
+        </div>
+        <div className="metricCard">
+          <UserCheck size={18} />
+          <span className="metricValue">{formatNumber(summary.returning_visitors)}</span>
+          <span className="metricLabel">Returning visitors</span>
+        </div>
+        <div className="metricCard">
           <MousePointerClick size={18} />
           <span className="metricValue">{summary.bounce_rate}%</span>
           <span className="metricLabel">Bounce rate</span>
@@ -270,88 +451,174 @@ export function AnalyticsDashboard({
           <Clock size={18} />
           <span className="metricValue">{summary.avg_engagement_seconds}s</span>
           <span className="metricLabel">Avg engagement</span>
-          <Delta
-            current={summary.avg_engagement_seconds}
-            previous={prev?.avg_engagement_seconds}
-          />
+          <Delta current={summary.avg_engagement_seconds} previous={prev?.avg_engagement_seconds} />
         </div>
       </div>
 
       <div className="chartPanel">
         <div className="panelTitle">Traffic over time</div>
-        <div style={{ width: "100%", height: 280, minHeight: 280 }}>
+        <div className="chartContainer">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.08)" />
-              <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+              <XAxis dataKey="label" tick={{ fontSize: 12, fill: "var(--ax-muted)" }} />
+              <YAxis tick={{ fontSize: 12, fill: "var(--ax-muted)" }} />
+              <Tooltip
+                contentStyle={{
+                  background: "var(--ax-surface)",
+                  border: "1px solid var(--ax-border)",
+                  borderRadius: 10,
+                  color: "var(--ax-primary)",
+                }}
+              />
               <Area
                 type="monotone"
                 dataKey="views"
-                fill="rgba(0,82,255,0.12)"
-                stroke="#0052ff"
+                fill={areaFill}
+                stroke={areaStroke}
                 name="Page views"
               />
-              <Line type="monotone" dataKey="uniques" stroke="#059669" name="Uniques" />
+              <Line type="monotone" dataKey="uniques" stroke={lineStroke} name="Uniques" />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       <div className="splitPanels">
-        <div className="chartPanel">
-          <div className="panelTitle">Top paths</div>
-          <ul className="list">
-            {summary.top_paths.map((row) => (
-              <li key={row.path}>
-                <span>{row.path}</span>
-                <span>
-                  {row.views} views · {row.uniques} uniques
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="chartPanel">
-          <div className="panelTitle">Top referrers</div>
-          <ul className="list">
-            {summary.referrer_breakdown.map((row) => (
-              <li key={row.referrer}>
-                <span>{row.referrer}</span>
-                <span>{row.count}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <BreakdownPanel
+          title="Top paths"
+          emptyMessage="No path data for this period."
+          rows={summary.top_paths.map((row) => ({
+            key: row.path,
+            label: row.path,
+            value: `${formatNumber(row.views)} views · ${formatNumber(row.uniques)} uniques`,
+          }))}
+        />
+        <BreakdownPanel
+          title="Top content"
+          emptyMessage="No content data for this period."
+          rows={summary.top_content.map((row) => ({
+            key: row.content_id || row.content_slug || row.content_title,
+            label: row.content_title || row.content_slug || row.content_id,
+            value: `${formatNumber(row.views)} views`,
+          }))}
+        />
       </div>
 
       <div className="splitPanels">
-        <div className="chartPanel">
-          <div className="panelTitle">Devices</div>
-          <ul className="list">
-            {summary.device_breakdown.map((row) => (
-              <li key={row.device_type}>
-                <span>{row.device_type}</span>
-                <span>{row.count}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="chartPanel">
-          <div className="panelTitle">Browsers</div>
-          <ul className="list">
-            {summary.browser_breakdown.map((row) => (
-              <li key={row.browser}>
-                <span>{row.browser}</span>
-                <span>{row.count}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <BreakdownPanel
+          title="Landing pages"
+          emptyMessage="No landing page data for this period."
+          rows={summary.landing_pages.map((row) => ({
+            key: row.path,
+            label: row.path,
+            value: `${formatNumber(row.sessions)} sessions`,
+          }))}
+        />
+        <BreakdownPanel
+          title="Top referrers"
+          emptyMessage="No referrer data for this period."
+          rows={summary.referrer_breakdown.map((row) => ({
+            key: row.referrer,
+            label: row.referrer,
+            value: formatNumber(row.count),
+          }))}
+        />
       </div>
+
+      <div className="splitPanels">
+        <BreakdownPanel
+          title="UTM source"
+          emptyMessage="No UTM source data for this period."
+          rows={summary.utm_source_breakdown.map((row) => ({
+            key: row.source,
+            label: row.source,
+            value: formatNumber(row.count),
+          }))}
+        />
+        <BreakdownPanel
+          title="UTM medium"
+          emptyMessage="No UTM medium data for this period."
+          rows={summary.utm_medium_breakdown.map((row) => ({
+            key: row.medium,
+            label: row.medium,
+            value: formatNumber(row.count),
+          }))}
+        />
+      </div>
+
+      <div className="splitPanels">
+        <BreakdownPanel
+          title="UTM campaign"
+          emptyMessage="No UTM campaign data for this period."
+          rows={summary.utm_campaign_breakdown.map((row) => ({
+            key: row.campaign,
+            label: row.campaign,
+            value: formatNumber(row.count),
+          }))}
+        />
+        <BreakdownPanel
+          title="Countries"
+          emptyMessage="No geo data for this period."
+          rows={summary.country_breakdown.map((row) => ({
+            key: row.country,
+            label: row.country,
+            value: formatNumber(row.count),
+          }))}
+        />
+      </div>
+
+      <div className="splitPanels">
+        <BreakdownPanel
+          title="Regions"
+          emptyMessage="No region data for this period."
+          rows={summary.region_breakdown.map((row) => ({
+            key: row.region,
+            label: row.region,
+            value: formatNumber(row.count),
+          }))}
+        />
+        <BreakdownPanel
+          title="Languages"
+          emptyMessage="No language data for this period."
+          rows={summary.language_breakdown.map((row) => ({
+            key: row.language,
+            label: row.language,
+            value: formatNumber(row.count),
+          }))}
+        />
+      </div>
+
+      <div className="splitPanels">
+        <BreakdownPanel
+          title="Devices"
+          emptyMessage="No device data for this period."
+          rows={summary.device_breakdown.map((row) => ({
+            key: row.device_type,
+            label: row.device_type,
+            value: formatNumber(row.count),
+          }))}
+        />
+        <BreakdownPanel
+          title="Browsers"
+          emptyMessage="No browser data for this period."
+          rows={summary.browser_breakdown.map((row) => ({
+            key: row.browser,
+            label: row.browser,
+            value: formatNumber(row.count),
+          }))}
+        />
+      </div>
+
+      <BreakdownPanel
+        title="Operating systems"
+        emptyMessage="No OS data for this period."
+        rows={summary.os_breakdown.map((row) => ({
+          key: row.os,
+          label: row.os,
+          value: formatNumber(row.count),
+        }))}
+      />
     </div>
   );
 }

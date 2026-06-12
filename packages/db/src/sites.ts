@@ -83,6 +83,42 @@ export async function getSiteByApiSecret(apiSecret: string): Promise<SiteRecord 
   return parseSiteRow(row);
 }
 
+export async function updateSite(
+  siteId: string,
+  input: {
+    name?: string;
+    domain?: string;
+    exclude_paths?: string[];
+    allowed_origins?: string[];
+    retention_days?: number;
+  }
+): Promise<SiteRecord | null> {
+  const sql = getDb();
+  const current = await getSiteById(siteId);
+  if (!current) return null;
+
+  const name = input.name ?? current.name;
+  const domain = input.domain ?? current.domain;
+  const exclude_paths = JSON.stringify(input.exclude_paths ?? current.exclude_paths);
+  const allowed_origins = JSON.stringify(input.allowed_origins ?? current.allowed_origins);
+  const retention_days = input.retention_days ?? current.retention_days;
+
+  const rows = await sql`
+    UPDATE sites
+    SET
+      name = ${name},
+      domain = ${domain},
+      exclude_paths = ${exclude_paths}::jsonb,
+      allowed_origins = ${allowed_origins}::jsonb,
+      retention_days = ${retention_days}
+    WHERE id = ${siteId}::uuid
+    RETURNING *
+  `;
+  const row = firstRow<Record<string, unknown>>(rows);
+  if (!row) return null;
+  return parseSiteRow(row);
+}
+
 export async function regenerateSiteKeys(siteId: string): Promise<SiteRecord | null> {
   const sql = getDb();
   const site_key = generateSiteKey();

@@ -11,6 +11,7 @@ Analytix is a multi-tenant, first-party analytics platform. Host it once, connec
 | **Operator** — deploy on Netlify | [setup/DEPLOY-NETLIFY.md](./setup/DEPLOY-NETLIFY.md) |
 | **Your private deployment notes** | Copy [setup.local.example/](./setup.local.example/) → `docs/setup.local/` (gitignored) |
 | **AI agents / developers** — integrate Analytix | [agents/README.md](./agents/README.md) |
+| **Product roadmap & upgrades** | [planning/PRODUCT-ROADMAP.md](./planning/PRODUCT-ROADMAP.md) |
 | **Publish npm packages** | [PUBLISHING.md](./PUBLISHING.md) |
 
 ## Repository layout

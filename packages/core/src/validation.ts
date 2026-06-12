@@ -42,4 +42,16 @@ export const createSiteSchema = z.object({
   retention_days: z.number().int().min(30).max(730).optional(),
 });
 
+export const updateSiteSchema = z
+  .object({
+    name: z.string().min(1).max(120).optional(),
+    domain: z.string().min(1).max(200).optional(),
+    exclude_paths: z.array(z.string().max(200)).optional(),
+    allowed_origins: z.array(z.string().max(200)).optional(),
+    retention_days: z.number().int().min(30).max(730).optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field is required",
+  });
+
 export type CollectEventPayload = z.infer<typeof collectEventSchema>;

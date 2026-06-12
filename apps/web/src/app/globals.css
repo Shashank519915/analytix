@@ -204,3 +204,9 @@ main {
   font-size: 0.8125rem;
   word-break: break-all;
 }
+
+.copyBtn {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+}
