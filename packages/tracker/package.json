@@ -27,7 +27,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@analytix/core": "^0.3.0"
+    "@analytix/core": "^0.3.1"
   },
   "devDependencies": {
     "typescript": "^5"

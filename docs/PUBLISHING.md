@@ -95,14 +95,18 @@ Publish order: **core → react → dashboard → tracker**.
 
 The publish script **skips versions already on npm** — safe to re-run after a partial publish.
 
-**Current versions:**
+**Current versions (repo — publish these next):**
 
-| Package | Version |
-|---------|---------|
-| `@analytix/core` | 0.3.0 |
-| `@analytix/react` | 0.3.0 |
-| `@analytix/tracker` | 0.3.0 |
-| `@analytix/dashboard` | 0.2.3 |
+| Package | Version | On npmjs (before publish) |
+|---------|---------|---------------------------|
+| `@analytix/core` | **0.3.1** | 0.3.0 |
+| `@analytix/react` | **0.3.1** | 0.3.0 |
+| `@analytix/tracker` | 0.3.0 | 0.3.0 |
+| `@analytix/dashboard` | **0.2.4** | 0.2.3 |
+
+**0.3.1** — fail-closed config, `buildDefaultAllowedOrigins()`, stricter CORS origin checks.
+
+**0.2.4** — dashboard theme hook (light/dark/system), host CSS vars, UI polish, error retry.
 
 Publish a single package:
 
@@ -117,9 +121,9 @@ npm publish --access public -w @analytix/react
 ```json
 {
   "dependencies": {
-    "@analytix/core": "^0.3.0",
-    "@analytix/react": "^0.3.0",
-    "@analytix/dashboard": "^0.2.3",
+    "@analytix/core": "^0.3.1",
+    "@analytix/react": "^0.3.1",
+    "@analytix/dashboard": "^0.2.4",
     "@analytix/tracker": "^0.3.0"
   }
 }

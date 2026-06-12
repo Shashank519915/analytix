@@ -1,19 +1,17 @@
 # Integrate Analytix into a Next.js project (agent checklist)
 
-Follow these steps in order. Check off each item before moving on.
-
-**Reference:** [REFERENCE-IMPLEMENTATION.md](./REFERENCE-IMPLEMENTATION.md)
+Follow these steps in order. **Reference:** Bluemint + [REFERENCE-IMPLEMENTATION.md](./REFERENCE-IMPLEMENTATION.md).
 
 ---
 
 ## Phase 0 — Prerequisites
 
 - [ ] Analytix platform is running (local `:3001` or production URL)
-- [ ] A **Site** exists; operator provides:
+- [ ] A **Site** exists in dashboard; operator provides:
   - `ANALYTICS_SITE_ID` (UUID)
   - `NEXT_PUBLIC_ANALYTICS_SITE_KEY` (`sk_live_...`)
   - `ANALYTICS_API_SECRET` (`sk_secret_...`)
-- [ ] GitHub PAT with `read:packages` for npm install
+- [ ] Site **allowed_origins** includes consumer prod URL (e.g. `https://yoursite.netlify.app`)
 
 ---
 
@@ -22,28 +20,31 @@ Follow these steps in order. Check off each item before moving on.
 ### 1.1 `package.json`
 
 ```json
-"@analytix/react": "^0.2.2",
-"@analytix/dashboard": "^0.2.2"
+{
+  "dependencies": {
+    "@analytix/core": "^0.3.1",
+    "@analytix/react": "^0.3.1"
+  }
+}
 ```
 
-Add `@analytix/core` only if importing types directly.
+Add `@analytix/dashboard@^0.2.4` only if using embeddable admin UI.
 
-### 1.2 `.npmrc`
+### 1.2 `.npmrc` (optional)
 
 ```
 @analytix:registry=https://registry.npmjs.org/
-//npm.pkg.github.com/:_authToken=${NPM_TOKEN}
 ```
+
+No `NPM_TOKEN` required for public npm install.
 
 ### 1.3 `next.config.ts`
 
 ```typescript
-transpilePackages: [
-  "@analytix/core",
-  "@analytix/react",
-  "@analytix/dashboard",
-],
+transpilePackages: ["@analytix/core", "@analytix/react"],
 ```
+
+Add `"@analytix/dashboard"` if embedding dashboard.
 
 ### 1.4 Install
 
@@ -51,11 +52,11 @@ transpilePackages: [
 npm install
 ```
 
+If install fails with `ETARGET` for `@analytix/*@^0.3.1`, the operator must publish from `analytics/` first (`npm run publish:packages`). See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md).
+
 ---
 
 ## Phase 2 — Environment
-
-Add to `.env.example` and `.env.local`:
 
 ```env
 ANALYTICS_API_URL=http://localhost:3001
@@ -65,9 +66,9 @@ NEXT_PUBLIC_ANALYTICS_SITE_ID=
 NEXT_PUBLIC_ANALYTICS_SITE_KEY=
 ```
 
-Production: `ANALYTICS_API_URL=https://your-analytix.example.com` (or operator URL).
+Production: `ANALYTICS_API_URL=https://your-analytix.example.com`
 
-See [ENV-VARS.md](./ENV-VARS.md) for full table.
+See [ENV-VARS.md](./ENV-VARS.md).
 
 ---
 
@@ -75,42 +76,41 @@ See [ENV-VARS.md](./ENV-VARS.md) for full table.
 
 Create `src/lib/analytix-config.ts`:
 
-- `getAnalytixServerConfig()` — returns null if misconfigured; used by API routes
-- `getAnalytixClientConfig()` — returns null if no site key; used by tracker
-- `isAnalytixEnabled()` — optional guard
-
-Copy from your consumer project's `analytix-config.ts` or see [CONSUMER-SETUP.md](../setup/CONSUMER-SETUP.md).
+- `getAnalytixServerConfig()` — server routes; returns null if misconfigured
+- `getAnalytixClientConfig()` — tracker; `collectUrl` defaults to `/api/analytics/collect`
+- `isAnalytixEnabled()` — guard when site key missing
 
 ---
 
 ## Phase 4 — Client tracking
 
-### 4.1 Loader component
+### 4.1 Loader + Root
 
-`src/components/analytics/AnalytixLoader.tsx`:
+**Server** `AnalytixLoader.tsx` — read config, render client root or null.
 
-- Read `getAnalytixClientConfig()`
-- Render `<AnalytixProvider>` + `<AnalytixTracker>`
-- Return `null` if disabled (no env)
+**Client** `AnalytixRoot.tsx`:
+
+```tsx
+import { AnalytixProvider, AnalytixTrackerNext } from "@analytix/react";
+import { AnalytixConsentBridge } from "./AnalytixConsentBridge";
+
+export default function AnalytixRoot({ config }: { config: AnalytixConfig }) {
+  return (
+    <AnalytixProvider config={config}>
+      <AnalytixConsentBridge />
+      <AnalytixTrackerNext getContentFromPath={...} />
+    </AnalytixProvider>
+  );
+}
+```
 
 ### 4.2 Root layout
 
-Import `AnalytixLoader` in `src/app/layout.tsx` inside `<body>`.
+Mount `<AnalytixLoader />` in `src/app/layout.tsx`.
 
-### 4.3 Optional content enrichment
+### 4.3 Consent
 
-Pass `getContentFromPath` to `AnalytixTracker` for blog slugs:
-
-```tsx
-<AnalytixTracker
-  getContentFromPath={(pathname) => {
-    const m = pathname.match(/^\/blog\/([^/]+)$/);
-    return m ? { slug: decodeURIComponent(m[1]) } : null;
-  }}
-/>
-```
-
-Enrich with `content_id` in collect proxy if needed.
+If site has `consent_required: true`, `AnalytixConsentBridge` shows a banner and calls `grantConsent()` on accept. See Bluemint `AnalytixConsentBridge.tsx`.
 
 ---
 
@@ -120,34 +120,33 @@ Enrich with `content_id` in collect proxy if needed.
 
 `src/app/api/analytics/collect/route.ts`
 
-- `POST` only
-- Forward body to `{ANALYTICS_API_URL}/api/v1/collect`
-- Header: `X-Analytix-Site-Key: {siteKey from server config}`
-- Return upstream status + JSON
+- Validate with `collectEventSchema` from `@analytix/core`
+- Forward to `{ANALYTICS_API_URL}/api/v1/collect`
+- Header: `X-Analytix-Site-Key`
+- Optional: enrich `content_id` / slug from CMS
 
-### 5.2 Summary (admin)
+### 5.2 Config (recommended)
+
+`src/app/api/analytics/config/route.ts` → platform `GET /api/v1/config`
+
+### 5.3 Summary (admin)
 
 `src/app/api/admin/analytics/route.ts`
 
-- Protect with existing admin auth
-- Forward query string to `{ANALYTICS_API_URL}/api/v1/sites/{siteId}/summary`
-- Header: `X-Analytix-Api-Secret: {apiSecret}`
-- Append `compare=1` if not present (period deltas)
+- Admin auth required
+- Header: `X-Analytix-Api-Secret`
+- Forward to `/api/v1/sites/{siteId}/summary`
+- Append `compare=1` for period deltas
 
-### 5.3 Export (admin)
+### 5.4 Export (admin)
 
-`src/app/api/admin/analytics/export/route.ts`
-
-- Same auth + secret header
-- Proxy to `.../export`, stream CSV response
+Proxy to `.../export`, stream CSV.
 
 ---
 
 ## Phase 6 — Admin UI
 
-Pick one:
-
-### Option A — Embeddable package (minimal)
+**Option A — Embeddable** (`@analytix/dashboard@^0.2.4`):
 
 ```tsx
 import dynamic from "next/dynamic";
@@ -155,50 +154,33 @@ import "@analytix/dashboard/styles.css";
 
 const AnalyticsDashboard = dynamic(
   () => import("@analytix/dashboard").then((m) => m.AnalyticsDashboard),
-  { loading: () => <YourSkeleton /> }
+  { ssr: false, loading: () => <YourSkeleton /> }
 );
-
-<AnalyticsDashboard
-  siteId={process.env.NEXT_PUBLIC_ANALYTICS_SITE_ID!}
-  summaryEndpoint="/api/admin/analytics"
-  exportEndpoint="/api/admin/analytics/export"
-  loadingFallback={<YourSkeleton />}
-/>
 ```
 
-### Option B — Custom dashboard (recommended for production sites)
-
-- Copy pattern from [REFERENCE-IMPLEMENTATION.md](./REFERENCE-IMPLEMENTATION.md)
-- Fetch `/api/admin/analytics?...`
-- Use existing admin design system + `AnalyticsSkeleton`
-
-If API returns `top_content` but UI expects `top_posts`, adapt in proxy route (see [REFERENCE-IMPLEMENTATION.md](./REFERENCE-IMPLEMENTATION.md)).
-
-If UI sends `postId`, proxy must map to `contentId` for platform API.
+**Option B — Custom (Bluemint):** fetch `/api/admin/analytics`, branded skeleton + charts.
 
 ---
 
 ## Phase 7 — Netlify / production
 
-- [ ] `NPM_TOKEN` in Netlify env
 - [ ] All `ANALYTICS_*` env vars set (production platform URL)
 - [ ] `SECRETS_SCAN_OMIT_KEYS` includes `NEXT_PUBLIC_ANALYTICS_SITE_KEY`, `NEXT_PUBLIC_ANALYTICS_SITE_ID`, `ANALYTICS_SITE_ID`
-- [ ] `npm run build` passes locally before push
-
-See [../setup/DEPLOY-NETLIFY.md](../setup/DEPLOY-NETLIFY.md)
+- [ ] `npm run build` passes locally
+- [ ] **No `NPM_TOKEN`** needed for consumer install from npmjs
 
 ---
 
 ## Phase 8 — Verify
 
-- [ ] Public pages generate network POST to `/api/analytics/collect` (200)
-- [ ] Admin analytics page loads metrics
-- [ ] Platform dashboard shows same site data
-- [ ] No `api_secret` in browser bundle or Network tab from client
+- [ ] Public pages POST `/api/analytics/collect` → 200
+- [ ] Admin analytics loads metrics
+- [ ] Platform `/dashboard` shows same site data
+- [ ] No `api_secret` in browser Network tab
 
 ---
 
-## Parameter mapping (platform summary API)
+## Parameter mapping (summary API)
 
 | Query param | Values | Notes |
 |-------------|--------|-------|
@@ -208,6 +190,5 @@ See [../setup/DEPLOY-NETLIFY.md](../setup/DEPLOY-NETLIFY.md)
 | `scope` | `all`, `page`, `blog`, `article` | Traffic filter |
 | `path` | e.g. `/blog` | With `scope=page` |
 | `contentId` | UUID | With `scope=article` |
-| `includeBlogArticles` | `1` | With `path=/blog` |
 
-Legacy consumer code may use `postId` — map to `contentId` in proxy.
+Map legacy `postId` → `contentId` in proxy.

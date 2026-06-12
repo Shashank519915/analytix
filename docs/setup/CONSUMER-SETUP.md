@@ -29,12 +29,15 @@ In your consumer `package.json`:
 ```json
 {
   "dependencies": {
-    "@analytix/core": "^0.2.2",
-    "@analytix/react": "^0.2.2",
-    "@analytix/dashboard": "^0.2.2"
+    "@analytix/core": "^0.3.1",
+    "@analytix/react": "^0.3.1"
   }
 }
 ```
+
+Add `@analytix/dashboard@^0.2.4` only if embedding the generic admin UI (Bluemint uses a custom dashboard instead).
+
+> **Publish order:** If `npm install` fails with `ETARGET` for `@analytix/*@^0.3.1`, run `npm run publish:packages` in `analytics/` first, then retry in the consumer app.
 
 Optional `.npmrc` (explicit registry — no token needed):
 

@@ -1,6 +1,6 @@
 export function AnalyticsDashboardSkeleton() {
   return (
-    <div className="analytix-dash analytix-skeleton" aria-busy="true" aria-label="Loading analytics">
+    <div className="analytix-dash analytix-theme-light analytix-skeleton" aria-busy="true" aria-label="Loading analytics">
       <div className="toolbar">
         <div className="sk skRealtime" />
         <div className="sk skBtn" />

@@ -39,8 +39,13 @@ export function SitesBentoGrid({ sites }: { sites: SiteRecord[] }) {
 
   return (
     <div className="sitesBento">
-      {sites.map((site) => (
-        <Link key={site.id} className="siteCard" href={`/dashboard/sites/${site.id}`}>
+      {sites.map((site, index) => (
+        <Link
+          key={site.id}
+          className="siteCard"
+          href={`/dashboard/sites/${site.id}`}
+          style={{ ["--card-index" as string]: index }}
+        >
           <div className="siteCardHeader">
             <div>
               <h2 className="siteCardTitle">{site.name}</h2>

@@ -1,42 +1,55 @@
+/**
+ * Embeddable dashboard styles.
+ * Host apps may override tokens via --analytix-dash-* on a parent element.
+ */
 .analytix-dash {
-  --ax-primary: #0f172a;
-  --ax-muted: #64748b;
-  --ax-accent: #0052ff;
-  --ax-surface: rgba(255, 255, 255, 0.72);
-  --ax-surface-solid: #ffffff;
-  --ax-border: rgba(15, 23, 42, 0.08);
-  --ax-success: #047857;
-  --ax-success-bg: rgba(5, 150, 105, 0.08);
-  --ax-danger: #dc2626;
-  --ax-up: #059669;
-  --ax-down: #dc2626;
-  --ax-chart-grid: rgba(15, 23, 42, 0.08);
+  --ax-primary: var(--analytix-dash-ink, #111111);
+  --ax-muted: var(--analytix-dash-muted, #787774);
+  --ax-accent: var(--analytix-dash-accent, #111111);
+  --ax-surface: var(--analytix-dash-surface, rgba(255, 255, 255, 0.82));
+  --ax-surface-solid: var(--analytix-dash-surface-solid, #ffffff);
+  --ax-border: var(--analytix-dash-border, rgba(17, 17, 17, 0.08));
+  --ax-success: var(--analytix-dash-success, #346538);
+  --ax-success-bg: var(--analytix-dash-success-bg, #edf3ec);
+  --ax-danger: var(--analytix-dash-danger, #9f2f2d);
+  --ax-up: #346538;
+  --ax-down: #9f2f2d;
+  --ax-chart-grid: rgba(17, 17, 17, 0.08);
   display: flex;
   flex-direction: column;
   gap: 24px;
   width: 100%;
+  min-width: 0;
   color: var(--ax-primary);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(
+    --analytix-dash-font,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif
+  );
 }
 
 .analytix-dash.analytix-theme-dark {
-  --ax-primary: #e2e8f0;
-  --ax-muted: #94a3b8;
-  --ax-accent: #60a5fa;
-  --ax-surface: rgba(15, 23, 42, 0.72);
-  --ax-surface-solid: #0f172a;
-  --ax-border: rgba(148, 163, 184, 0.18);
-  --ax-success: #34d399;
-  --ax-success-bg: rgba(52, 211, 153, 0.12);
-  --ax-up: #34d399;
-  --ax-down: #f87171;
-  --ax-chart-grid: rgba(148, 163, 184, 0.15);
+  --ax-primary: var(--analytix-dash-ink, #f7f6f3);
+  --ax-muted: var(--analytix-dash-muted, #9b9a97);
+  --ax-accent: var(--analytix-dash-accent, #f7f6f3);
+  --ax-surface: var(--analytix-dash-surface, rgba(25, 25, 24, 0.88));
+  --ax-surface-solid: var(--analytix-dash-surface-solid, #191918);
+  --ax-border: var(--analytix-dash-border, rgba(255, 255, 255, 0.1));
+  --ax-success: #6ee7b7;
+  --ax-success-bg: rgba(52, 101, 56, 0.22);
+  --ax-danger: #fca5a5;
+  --ax-up: #6ee7b7;
+  --ax-down: #fca5a5;
+  --ax-chart-grid: rgba(255, 255, 255, 0.08);
 }
 
 .analytix-dash.analytix-refreshing {
   opacity: 0.72;
   pointer-events: none;
-  transition: opacity 0.15s ease;
+  transition: opacity 150ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .analytix-dash .filters {
@@ -45,7 +58,7 @@
   gap: 14px;
   padding: 18px;
   border: 1px solid var(--ax-border);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--ax-surface);
 }
 
@@ -83,17 +96,33 @@
   font-weight: 600;
   cursor: pointer;
   color: var(--ax-muted);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    background 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    color 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .analytix-dash .chip:hover {
+    color: var(--ax-primary);
+    border-color: var(--ax-accent);
+  }
+}
+
+.analytix-dash .chip:active,
+.analytix-dash .chipActive:active {
+  transform: scale(0.97);
 }
 
 .analytix-dash .chipActive {
-  background: rgba(0, 82, 255, 0.08);
-  border-color: rgba(0, 82, 255, 0.18);
+  background: rgba(17, 17, 17, 0.06);
+  border-color: rgba(17, 17, 17, 0.14);
   color: var(--ax-accent);
 }
 
 .analytix-dash.analytix-theme-dark .chipActive {
-  background: rgba(96, 165, 250, 0.14);
-  border-color: rgba(96, 165, 250, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
 .analytix-dash .dateRangeRow {
@@ -115,9 +144,17 @@
   font: inherit;
   padding: 10px 12px;
   border: 1px solid var(--ax-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--ax-surface-solid);
   color: var(--ax-primary);
+  transition: border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.analytix-dash .textField input:focus,
+.analytix-dash .dateRangeRow input:focus,
+.analytix-dash select:focus {
+  outline: none;
+  border-color: var(--ax-accent);
 }
 
 .analytix-dash .checkboxRow {
@@ -139,7 +176,7 @@
   flex-direction: column;
   gap: 8px;
   padding: 18px;
-  border-radius: 14px;
+  border-radius: 12px;
   border: 1px solid var(--ax-border);
   background: var(--ax-surface);
   color: var(--ax-accent);
@@ -151,6 +188,7 @@
   font-weight: 600;
   color: var(--ax-primary);
   line-height: 1.2;
+  font-variant-numeric: tabular-nums;
 }
 
 .analytix-dash .metricLabel {
@@ -173,7 +211,7 @@
 
 .analytix-dash .chartPanel {
   padding: 18px;
-  border-radius: 14px;
+  border-radius: 12px;
   border: 1px solid var(--ax-border);
   background: var(--ax-surface);
   min-width: 0;
@@ -183,11 +221,15 @@
   width: 100%;
   height: 280px;
   min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .analytix-dash .panelTitle {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ax-muted);
   margin-bottom: 14px;
@@ -250,6 +292,7 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .analytix-dash .btn {
@@ -265,6 +308,18 @@
   font-weight: 600;
   color: var(--ax-primary);
   text-decoration: none;
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    background 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .analytix-dash .btn:hover {
+    background: var(--ax-surface);
+  }
+}
+
+.analytix-dash .btn:active {
+  transform: scale(0.97);
 }
 
 .analytix-dash .btnIcon {
@@ -272,12 +327,24 @@
 }
 
 .analytix-dash .realtime {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: 9999px;
   background: var(--ax-success-bg);
   color: var(--ax-success);
   font-size: 0.875rem;
   font-weight: 600;
+}
+
+.analytix-dash .realtime::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.85;
 }
 
 /* Skeleton */
@@ -285,12 +352,22 @@
   border-radius: 8px;
   background: linear-gradient(
     90deg,
-    rgba(148, 163, 184, 0.12) 0%,
-    rgba(148, 163, 184, 0.22) 50%,
-    rgba(148, 163, 184, 0.12) 100%
+    rgba(120, 119, 116, 0.1) 0%,
+    rgba(120, 119, 116, 0.18) 50%,
+    rgba(120, 119, 116, 0.1) 100%
   );
   background-size: 200% 100%;
   animation: analytix-shimmer 1.4s ease-in-out infinite;
+}
+
+.analytix-dash.analytix-theme-dark.analytix-skeleton .sk {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  background-size: 200% 100%;
 }
 
 .analytix-dash.analytix-skeleton .skRow {
@@ -302,6 +379,7 @@
 .analytix-dash.analytix-skeleton .skRealtime {
   width: 260px;
   height: 40px;
+  border-radius: 9999px;
 }
 
 .analytix-dash.analytix-skeleton .skBtn {
@@ -369,6 +447,17 @@
   }
   100% {
     background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analytix-dash.analytix-skeleton .sk {
+    animation: none;
+    background: rgba(120, 119, 116, 0.12);
+  }
+
+  .analytix-dash.analytix-theme-dark.analytix-skeleton .sk {
+    background: rgba(255, 255, 255, 0.08);
   }
 }
 

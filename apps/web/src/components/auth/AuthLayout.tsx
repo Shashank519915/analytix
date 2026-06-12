@@ -16,7 +16,8 @@ export function AuthLayout({
     <div className="authLayout">
       <div className="authBrandPanel">
         <div>
-          <div className="appBrand" style={{ border: 0, padding: 0, marginBottom: 32 }}>
+          <p className="eyebrow eyebrowInline">Analytix platform</p>
+          <div className="appBrand" style={{ border: 0, padding: 0, marginBottom: 24 }}>
             <div className="appBrandMark">A</div>
             <span className="appBrandName">Analytix</span>
           </div>

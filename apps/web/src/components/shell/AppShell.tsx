@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import LogoutButton from "@/components/LogoutButton";
+import { PlatformThemeToggle } from "@/components/PlatformThemeToggle";
 
 function NavIcon({ children }: { children: ReactNode }) {
   return (
-    <span aria-hidden style={{ display: "inline-flex", width: 18, height: 18 }}>
+    <span aria-hidden className="appNavIcon">
       {children}
     </span>
   );
@@ -42,10 +43,10 @@ export default function AppShell({
   return (
     <div className="appShell">
       <aside className="appSidebar" data-open={sidebarOpen ? "true" : "false"}>
-        <div className="appBrand">
+        <Link className="appBrand" href="/dashboard" onClick={() => setSidebarOpen(false)}>
           <div className="appBrandMark">A</div>
           <span className="appBrandName">Analytix</span>
-        </div>
+        </Link>
 
         <nav className="appNav" aria-label="Main">
           <Link
@@ -82,7 +83,10 @@ export default function AppShell({
 
         <div className="appSidebarFooter">
           <strong title={email}>{email}</strong>
-          <LogoutButton />
+          <div className="appSidebarActions">
+            <PlatformThemeToggle compact />
+            <LogoutButton />
+          </div>
         </div>
       </aside>
 
@@ -106,7 +110,7 @@ export default function AppShell({
             Menu
           </button>
           <span className="appBrandName">Analytix</span>
-          <span style={{ width: 56 }} aria-hidden />
+          <PlatformThemeToggle compact />
         </div>
 
         <main className="appMain">

@@ -29,8 +29,27 @@
   color-scheme: light;
 }
 
+html[data-theme="dark"] {
+  --ax-canvas: #111110;
+  --ax-surface: #191918;
+  --ax-surface-muted: #1f1f1e;
+  --ax-ink: #f7f6f3;
+  --ax-ink-secondary: #e3e2df;
+  --ax-muted: #9b9a97;
+  --ax-border: rgba(255, 255, 255, 0.1);
+  --ax-border-soft: rgba(255, 255, 255, 0.06);
+  --ax-accent: #f7f6f3;
+  --ax-accent-hover: #d8d7d4;
+  --ax-sidebar: #141413;
+  --ax-danger-bg: rgba(159, 47, 45, 0.2);
+  --ax-success-bg: rgba(52, 101, 56, 0.2);
+  --ax-info-bg: rgba(31, 108, 159, 0.2);
+  --ax-warn-bg: rgba(149, 100, 0, 0.2);
+  color-scheme: dark;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  html[data-theme="system"] {
     --ax-canvas: #111110;
     --ax-surface: #191918;
     --ax-surface-muted: #1f1f1e;
@@ -167,6 +186,54 @@ kbd {
   border: 1px solid var(--ax-border);
   border-radius: var(--ax-radius-lg);
   padding: 24px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.eyebrow {
+  margin: 0 0 16px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  border: 1px solid var(--ax-border);
+  background: var(--ax-surface-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ax-muted);
+}
+
+.eyebrowInline {
+  margin-bottom: 12px;
+}
+
+.themeToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--ax-radius);
+  border: 1px solid var(--ax-border);
+  background: var(--ax-surface);
+  color: var(--ax-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 160ms var(--ax-ease-out), background 160ms var(--ax-ease-out),
+    color 160ms var(--ax-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .themeToggle:hover {
+    background: var(--ax-surface-muted);
+    color: var(--ax-ink);
+  }
+}
+
+.themeToggle:active {
+  transform: scale(0.97);
 }
 
 .stack {
@@ -302,6 +369,9 @@ kbd {
   display: flex;
   flex-direction: column;
   position: relative;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 0, 0, 0.03), transparent),
+    var(--ax-canvas);
 }
 
 .sidebarBackdrop {
@@ -315,6 +385,24 @@ kbd {
   padding: 0 8px 24px;
   border-bottom: 1px solid var(--ax-border);
   margin-bottom: 16px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.appBrand:hover {
+  text-decoration: none;
+}
+
+.appNavIcon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  opacity: 0.72;
+}
+
+.appNavLink[data-active="true"] .appNavIcon {
+  opacity: 1;
 }
 
 .appBrandMark {
@@ -374,6 +462,13 @@ kbd {
   border-top: 1px solid var(--ax-border);
   font-size: 0.8125rem;
   color: var(--ax-muted);
+}
+
+.appSidebarActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .appSidebarFooter strong {
@@ -488,6 +583,25 @@ kbd {
   border: 1px solid var(--ax-border);
   border-radius: var(--ax-radius-lg);
   transition: box-shadow 200ms var(--ax-ease-out), transform 200ms var(--ax-ease-out);
+  animation: cardEnter 480ms var(--ax-ease-out) both;
+  animation-delay: calc(var(--card-index, 0) * 60ms);
+}
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .siteCard {
+    animation: none;
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -734,6 +848,13 @@ kbd {
 
 .landing {
   min-height: 100vh;
+  position: relative;
+}
+
+.landingBrand {
+  border: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .landingNav {
@@ -743,12 +864,16 @@ kbd {
   padding: 20px 40px;
   border-bottom: 1px solid var(--ax-border);
   background: var(--ax-sidebar);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(8px);
 }
 
 .landingHero {
   max-width: 720px;
   margin: 0 auto;
-  padding: 80px 40px 48px;
+  padding: 96px 40px 56px;
   text-align: center;
 }
 
@@ -762,11 +887,12 @@ kbd {
   color: var(--ax-ink);
 }
 
-.landingHero p {
+.landingHeroLead {
   margin: 20px auto 32px;
   max-width: 48ch;
   color: var(--ax-muted);
   font-size: 1.0625rem;
+  line-height: 1.65;
 }
 
 .landingActions {
@@ -778,19 +904,28 @@ kbd {
 
 .landingBento {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(12, 1fr);
   gap: 16px;
-  max-width: 960px;
+  max-width: 1040px;
   margin: 0 auto;
-  padding: 0 40px 80px;
+  padding: 0 40px 64px;
 }
 
 .landingFeature {
+  grid-column: span 4;
   padding: 28px;
   background: var(--ax-surface);
   border: 1px solid var(--ax-border);
   border-radius: var(--ax-radius-lg);
   text-align: left;
+}
+
+.landingFeaturePrimary {
+  grid-column: span 8;
+}
+
+.landingFeatureWide {
+  grid-column: span 12;
 }
 
 .landingFeature h3 {
@@ -804,6 +939,35 @@ kbd {
   margin: 0;
   font-size: 0.875rem;
   color: var(--ax-muted);
+  line-height: 1.6;
+}
+
+.landingFooter {
+  border-top: 1px solid var(--ax-border);
+  padding: 24px 40px 40px;
+  text-align: center;
+}
+
+.landingFooter p {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ax-muted);
+}
+
+.authPage {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 48px 24px;
+}
+
+.authTitle {
+  margin: 0 0 8px;
+  font-family: var(--ax-font-serif);
+  font-size: 1.75rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--ax-ink);
 }
 
 /* Integration panel */
@@ -906,6 +1070,12 @@ kbd {
 
   .landingBento {
     grid-template-columns: 1fr;
+  }
+
+  .landingFeature,
+  .landingFeaturePrimary,
+  .landingFeatureWide {
+    grid-column: 1 / -1;
   }
 
   .sitesBento .siteCard,

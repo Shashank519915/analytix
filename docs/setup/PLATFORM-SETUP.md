@@ -182,7 +182,7 @@ After first deploy, set `APP_URL` to the real URL and redeploy.
 | `npm run db:migrate` | Apply schema |
 | `npm run db:seed` | Create admin + first site |
 | `npm run build:packages` | Build publishable packages only |
-| `npm run publish:packages` | Publish to GitHub Packages |
+| `npm run publish:packages` | Publish `@analytix/*` to npmjs |
 
 ---
 

@@ -17,6 +17,7 @@ export function SiteAnalyticsSection({
     <AnalyticsDashboard
       siteId={siteId}
       defaultWidgets={defaultWidgets}
+      defaultTheme="light"
       settingsEndpoint={`/api/sites/${siteId}`}
       loadingFallback={<AnalyticsDashboardSkeleton />}
       onWidgetsSaved={() => toast("Widget layout saved as site default")}

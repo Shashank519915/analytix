@@ -1,6 +1,6 @@
 # Production readiness — pre-publish scan
 
-Last scan: June 2026 (before `@analytix/*` 0.3.0 publish).
+Last scan: June 2026 (before `@analytix/core` / `@analytix/react` **0.3.1** and `@analytix/dashboard` **0.2.4** publish).
 
 ## Skeleton loading (confirmed)
 
@@ -29,14 +29,14 @@ Also: sites bento skeleton, login Suspense skeleton, Bluemint admin `AnalyticsSk
 | Bluemint | Consent bridge + collect proxy validates with `collectEventSchema` |
 | Dev workflow | Root `npm run dev` runs `build:packages` first |
 
-## Package versions to publish
+## Package versions
 
-| Package | Version |
-|---------|---------|
-| `@analytix/core` | 0.3.0 |
-| `@analytix/react` | 0.3.0 |
-| `@analytix/tracker` | 0.3.0 |
-| `@analytix/dashboard` | 0.2.3 |
+| Package | Version | Notes |
+|---------|---------|-------|
+| `@analytix/core` | **0.3.1** | Origins helpers, fail-closed SDK |
+| `@analytix/react` | **0.3.1** | Matches core |
+| `@analytix/tracker` | 0.3.0 | Unchanged |
+| `@analytix/dashboard` | **0.2.4** | Theme hook, CSS tokens |
 
 ## Deferred (Phase 5+ — post-launch)
 
@@ -69,7 +69,7 @@ npm run publish:packages
 
 ### Bluemint
 
-- [ ] Bump `@analytix/*` to `^0.3.0` / `^0.2.3` and `npm install`
+- [ ] Bump `@analytix/core` + `@analytix/react` to `^0.3.1`, run `npm install` **after** npm publish
 - [ ] `ANALYTIX_*` env vars set on Netlify
 - [ ] Redeploy
 

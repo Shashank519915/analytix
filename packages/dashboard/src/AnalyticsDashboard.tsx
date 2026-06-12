@@ -23,12 +23,14 @@ import {
   FileText,
   UserPlus,
   UserCheck,
-  Moon,
   Sun,
+  Moon,
+  Monitor,
   SlidersHorizontal,
 } from "lucide-react";
 import { AnalyticsDashboardSkeleton } from "./AnalyticsDashboardSkeleton";
 import { useDashboardWidgets } from "./useDashboardWidgets";
+import { DASHBOARD_THEME_LABELS, useDashboardTheme } from "./useDashboardTheme";
 import { WidgetCustomizePanel } from "./WidgetCustomizePanel";
 
 type RangeKey = "24h" | "7d" | "30d" | "90d";
@@ -111,25 +113,6 @@ function BreakdownPanel({
   );
 }
 
-function useResolvedTheme(mode: ThemeMode) {
-  const [resolved, setResolved] = useState<"light" | "dark">("light");
-
-  useEffect(() => {
-    if (mode !== "system") {
-      setResolved(mode);
-      return;
-    }
-
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const apply = () => setResolved(media.matches ? "dark" : "light");
-    apply();
-    media.addEventListener("change", apply);
-    return () => media.removeEventListener("change", apply);
-  }, [mode]);
-
-  return resolved;
-}
-
 export function AnalyticsDashboard({
   siteId,
   summaryEndpoint,
@@ -159,8 +142,7 @@ export function AnalyticsDashboard({
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [themeMode, setThemeMode] = useState<ThemeMode>(defaultTheme);
-  const resolvedTheme = useResolvedTheme(themeMode);
+  const { themeMode, cycleTheme, resolvedTheme } = useDashboardTheme(siteId, defaultTheme);
   const hasLoadedRef = useRef(false);
   const [showWidgetCustomize, setShowWidgetCustomize] = useState(false);
   const [savingDefaultWidgets, setSavingDefaultWidgets] = useState(false);
@@ -343,16 +325,17 @@ export function AnalyticsDashboard({
           <button
             type="button"
             className="btn btnIcon"
-            onClick={() =>
-              setThemeMode((current) =>
-                current === "dark" || (current === "system" && resolvedTheme === "dark")
-                  ? "light"
-                  : "dark"
-              )
-            }
-            aria-label="Toggle theme"
+            onClick={cycleTheme}
+            aria-label={`Theme: ${DASHBOARD_THEME_LABELS[themeMode]}. Click to change.`}
+            title={`Theme: ${DASHBOARD_THEME_LABELS[themeMode]}`}
           >
-            {resolvedTheme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+            {themeMode === "system" ? (
+              <Monitor size={16} />
+            ) : resolvedTheme === "dark" ? (
+              <Sun size={16} />
+            ) : (
+              <Moon size={16} />
+            )}
           </button>
           <a className="btn" href={`${exportUrl}?${filterParams.toString()}`}>
             <Download size={14} />

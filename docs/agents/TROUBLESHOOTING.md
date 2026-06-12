@@ -68,6 +68,20 @@ SECRETS_SCAN_OMIT_KEYS=CLOUDINARY_CLOUD_NAME,NEXT_PUBLIC_ANALYTICS_SITE_KEY,NEXT
 
 ---
 
+### `ETARGET` — No matching version for `@analytix/react@^0.3.1`
+
+**Cause:** Consumer `package.json` requests a version not yet on npmjs (e.g. `^0.3.1` while npm still has `0.3.0`).
+
+**Fix:**
+
+1. In `analytics/`: `npm run build:packages && npm run publish:packages`
+2. Verify: `npm view @analytix/core@0.3.1 version`
+3. In consumer: `npm install`
+
+Until publish completes, temporarily pin `^0.3.0` only if you do not need 0.3.1 fixes (fail-closed config, origins helpers).
+
+---
+
 ### `Module not found: @analytix/react` (local)
 
 **Cause:** Turbopack + `file:` symlinks on Windows, or missing install.

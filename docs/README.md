@@ -36,13 +36,16 @@ analytics/
 
 Consumer apps install from [npmjs.com](https://www.npmjs.com/org/analytix):
 
-| Package | Version |
-|---------|---------|
-| `@analytix/core` | ^0.2.2 |
-| `@analytix/react` | ^0.2.2 |
-| `@analytix/dashboard` | ^0.2.2 |
+| Package | Version (repo / target) | On npmjs (Jun 2026) |
+|---------|-------------------------|---------------------|
+| `@analytix/core` | **^0.3.1** | 0.3.0 → publish 0.3.1 |
+| `@analytix/react` | **^0.3.1** | 0.3.0 → publish 0.3.1 |
+| `@analytix/dashboard` | **^0.2.4** | 0.2.3 → publish 0.2.4 |
+| `@analytix/tracker` | ^0.3.0 | 0.3.0 |
 
-No GitHub token or `.npmrc` auth required for public installs. See [PUBLISHING.md](./PUBLISHING.md) for publishing new versions.
+No GitHub token or `.npmrc` auth required for public installs. Optional `.npmrc`: `@analytix:registry=https://registry.npmjs.org/`
+
+Publish new versions: [PUBLISHING.md](./PUBLISHING.md). Agent integration: [agents/README.md](./agents/README.md).
 
 ## Quick operator checklist
 
