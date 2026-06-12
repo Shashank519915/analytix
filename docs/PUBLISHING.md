@@ -1,6 +1,6 @@
 # Publishing to GitHub Packages
 
-Analytix ships three client packages you install in sites like Bluemint:
+Analytix ships three client packages for consumer websites:
 
 | Package | Purpose |
 |---------|---------|
@@ -8,7 +8,9 @@ Analytix ships three client packages you install in sites like Bluemint:
 | `@YOUR_SCOPE/analytix-react` | Client tracker + React provider |
 | `@YOUR_SCOPE/analytix-dashboard` | Embeddable admin dashboard UI |
 
-The platform app (`apps/web`) and `@analytix/db` stay in this repo — not published to npm.
+The platform app (`apps/web`) and `@analytix/db` stay in this repo — **not** published to npm.
+
+The database schema (`packages/db/src/schema.sql`) **is** in the repo — required for self-hosters running `npm run db:migrate`.
 
 ---
 
@@ -30,7 +32,6 @@ git push -u origin main
 GitHub Packages requires the npm scope to match your GitHub username or org.
 
 ```bash
-cd analytics
 node scripts/configure-github-scope.mjs YOUR_GITHUB_USERNAME
 ```
 
@@ -38,17 +39,16 @@ This renames packages from `@analytix/*` to `@YOUR_GITHUB_USERNAME/analytix-*`.
 
 ---
 
-## 3. Authenticate npm
+## 3. Authenticate npm (publishers only)
 
 Create a GitHub classic PAT with `write:packages` and `read:packages`.
 
 ```bash
 cp .npmrc.example .npmrc
-# Edit .npmrc — replace YOUR_GITHUB_USERNAME
-# Set token: export GITHUB_TOKEN=ghp_...   (PowerShell: $env:GITHUB_TOKEN="ghp_...")
+# PowerShell: $env:GITHUB_TOKEN="ghp_..."
 ```
 
-`.npmrc` contents:
+Publisher `.npmrc`:
 
 ```
 @YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com
@@ -65,36 +65,17 @@ npm run build:packages
 npm run publish:packages
 ```
 
-Or publish individually:
-
-```bash
-npm run build -w @YOUR_GITHUB_USERNAME/analytix-core
-npm publish -w @YOUR_GITHUB_USERNAME/analytix-core
-# repeat for react, dashboard (core must be published first)
-```
+Publish order is automatic: **core → react → dashboard**.
 
 ### Version bumps
 
-Before each release, bump versions in all three `package.json` files (keep them in sync):
-
-```json
-"version": "0.1.1"
-```
-
-Then publish again.
+Bump `"version"` in all three `packages/*/package.json` files (keep in sync), then publish again.
 
 ---
 
-## 5. Install in Bluemint (or any consumer)
+## 5. Install in a consumer project
 
-In `bluemint/.npmrc`:
-
-```
-@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
-In `bluemint/package.json`:
+### `package.json`
 
 ```json
 {
@@ -106,7 +87,7 @@ In `bluemint/package.json`:
 }
 ```
 
-Update imports in Bluemint:
+### Imports
 
 ```tsx
 import { AnalytixProvider } from "@YOUR_GITHUB_USERNAME/analytix-react";
@@ -114,36 +95,53 @@ import { AnalyticsDashboard } from "@YOUR_GITHUB_USERNAME/analytix-dashboard";
 import "@YOUR_GITHUB_USERNAME/analytix-dashboard/styles.css";
 ```
 
-Remove `file:../analytics/packages/*` dependencies when using published packages.
-
-```bash
-cd bluemint
-npm install
-npm run build
-```
+See [setup/CONSUMER-SETUP.md](./setup/CONSUMER-SETUP.md) for full wiring.
 
 ---
 
-## 6. Local development (before publishing)
+## 6. Consumer `.npmrc` — public vs private packages
 
-While developing both repos on the same machine, use `file:` links:
+### Public packages (recommended for open source)
 
-```json
-"@analytix/core": "file:../analytics/packages/core",
-"@analytix/react": "file:../analytics/packages/react",
-"@analytix/dashboard": "file:../analytics/packages/dashboard"
+After making packages **public** on GitHub (section 8), consumers only need the scope line:
+
+```
+@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com
 ```
 
-Build packages first:
+**No `NPM_TOKEN` required** for `npm install` or CI/Netlify builds.
+
+Remove `NPM_TOKEN` from Netlify/Vercel env vars if you previously added it.
+
+### Private packages
+
+```
+@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NPM_TOKEN}
+```
+
+Set `NPM_TOKEN` (PAT with `read:packages`) in CI and local env.
+
+---
+
+## 7. Local monorepo development
+
+While developing platform + consumer on the same machine, use `file:` links:
+
+```json
+"@YOUR_GITHUB_USERNAME/analytix-core": "file:../analytics/packages/core",
+"@YOUR_GITHUB_USERNAME/analytix-react": "file:../analytics/packages/react",
+"@YOUR_GITHUB_USERNAME/analytix-dashboard": "file:../analytics/packages/dashboard"
+```
 
 ```bash
 cd analytics && npm run build:packages
-cd ../bluemint && npm install && npm run dev
+cd ../your-consumer-app && npm install && npm run dev
 ```
 
 ---
 
-## 7. CI publish (optional)
+## 8. CI publish (optional)
 
 GitHub Action on tag `v*`:
 
@@ -157,22 +155,20 @@ GitHub Action on tag `v*`:
 
 ---
 
-## 8. Making packages public (recommended for open source)
+## 9. Making packages public
 
-By default GitHub Packages are **private** — consumers need `NPM_TOKEN` with `read:packages`.
-
-To make packages installable without auth:
-
-1. GitHub → each package page → **Package settings** → **Change visibility** → **Public**
-2. Or repo **Settings → Actions → General → Packages** (org policies may apply)
+1. GitHub → **Packages** → select each package → **Package settings** → **Change visibility** → **Public**
+2. Repeat for `analytix-core`, `analytix-react`, `analytix-dashboard`
 
 After public:
 
-- Consumers still use `@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com` in `.npmrc`
-- They **do not** need `NPM_TOKEN` for `npm install` of public packages
-- `publishConfig.access` in `package.json` can stay `restricted` for publish; visibility is set on GitHub UI
+| Who | Needs token? |
+|-----|----------------|
+| **Consumers** installing packages | No |
+| **You** publishing new versions | Yes (`GITHUB_TOKEN` / PAT with `write:packages`) |
+| **Netlify/Vercel** consumer builds | No (scope-only `.npmrc`) |
 
-Alternatively publish to [npmjs.org](https://www.npmjs.com) with a scope you own — update `publishConfig.registry` and `configure-github-scope.mjs` accordingly.
+Consumers still need the registry scope in `.npmrc` so npm knows where to find `@YOUR_GITHUB_USERNAME/*`.
 
 ---
 
@@ -180,9 +176,10 @@ Alternatively publish to [npmjs.org](https://www.npmjs.com) with a scope you own
 
 | Error | Fix |
 |-------|-----|
-| `403 Forbidden` on publish | PAT needs `write:packages`; repo must exist under same owner as scope |
-| `404` on install | `.npmrc` scope must match package name scope |
-| Bluemint can't resolve package | Run `npm run build:packages` before `npm install` when using `file:` |
-| Windows Turbopack path errors | Use published packages or `file:` + `dist/` exports (no absolute path aliases) |
+| `403 Forbidden` on publish | PAT needs `write:packages`; repo under same owner as scope |
+| `404` on install | `.npmrc` scope must match package name; check package is public |
+| Empty token errors on CI | Remove `//npm.pkg.github.com/:_authToken=...` when packages are public |
+| Consumer can't resolve package | Ensure `transpilePackages` in `next.config.ts` |
+| `file:` link fails on Windows | Use published packages instead |
 
-See also [INTEGRATION.md](./INTEGRATION.md).
+See also [setup/CONSUMER-SETUP.md](./setup/CONSUMER-SETUP.md) and [agents/TROUBLESHOOTING.md](./agents/TROUBLESHOOTING.md).

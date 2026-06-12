@@ -48,7 +48,7 @@ Configured in repo root `analytics/netlify.toml`.
 
 | Key | Value |
 |-----|-------|
-| `NPM_TOKEN` | GitHub PAT with `read:packages` |
+| `NPM_TOKEN` | **Optional** — only if packages are private on GitHub Packages |
 | `ANALYTICS_API_URL` | `https://your-analytix.example.com` |
 | `ANALYTICS_SITE_ID` | UUID from seed/dashboard |
 | `ANALYTICS_API_SECRET` | `sk_secret_...` |
@@ -72,10 +72,13 @@ Or set the same value in Netlify UI → Environment variables.
 
 ### `.npmrc` in consumer repo
 
+Public packages (scope only):
+
 ```
 @YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${NPM_TOKEN}
 ```
+
+Private packages — add auth line and `NPM_TOKEN` in Netlify env.
 
 ---
 
@@ -98,6 +101,6 @@ Or set the same value in Netlify UI → Environment variables.
 | `Cannot find module '@YOUR_GITHUB_USERNAME/analytix-core'` on Analytix build | Use `npm run build` not `build -w @analytix/db` only |
 | Bluemint secrets scan fails on `NEXT_PUBLIC_ANALYTICS_SITE_KEY` | Add `SECRETS_SCAN_OMIT_KEYS` |
 | Bluemint prod analytics empty | `ANALYTICS_API_URL` must be platform URL, not `localhost` |
-| `npm install` 404 on consumer | `NPM_TOKEN` + `.npmrc` scope `@YOUR_GITHUB_USERNAME` |
+| `npm install` 404 on consumer | `.npmrc` scope; confirm packages are public or set `NPM_TOKEN` |
 
 See [../agents/TROUBLESHOOTING.md](../agents/TROUBLESHOOTING.md) for more.
