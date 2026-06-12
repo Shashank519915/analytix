@@ -4,8 +4,8 @@ import {
   generateSiteKey,
   mergeAnalyticsConfig,
   toPublicSiteConfig,
-} from "@Shashank519915/analytix-core";
-import type { PublicSiteConfig, SiteAnalyticsConfig, SiteRecord } from "@Shashank519915/analytix-core";
+} from "@analytix/core";
+import type { PublicSiteConfig, SiteAnalyticsConfig, SiteRecord } from "@analytix/core";
 import { getDb } from "./client";
 import { firstRow, asRows } from "./rows";
 
@@ -104,7 +104,7 @@ export async function updateSite(
     exclude_paths?: string[];
     allowed_origins?: string[];
     retention_days?: number;
-    analytics_config?: Partial<import("@Shashank519915/analytix-core").SiteAnalyticsConfig>;
+    analytics_config?: Partial<import("@analytix/core").SiteAnalyticsConfig>;
   }
 ): Promise<SiteRecord | null> {
   const sql = getDb();

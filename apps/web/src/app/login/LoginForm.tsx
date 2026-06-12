@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { AuthLayout } from "@/components/auth/AuthLayout";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -41,47 +42,46 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="authShell">
-      <div className="card authCard">
-        <h1>Sign in</h1>
-        <p>Access your Analytix dashboard.</p>
-
-        <form className="stack" onSubmit={handleSubmit}>
-          <div className="field">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          {error ? <p className="error">{error}</p> : null}
-
-          <button className="btn" type="submit" disabled={loading}>
-            {loading ? "Signing in…" : "Sign in"}
-          </button>
-        </form>
-
-        <p style={{ marginTop: 24 }}>
+    <AuthLayout
+      title="Sign in"
+      lead="Access your sites and collection settings."
+      footer={
+        <>
           No account? <Link href="/register">Create one</Link>
-        </p>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <form className="stack" onSubmit={handleSubmit}>
+        <div className="field">
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+
+        {error ? <p className="error">{error}</p> : null}
+
+        <button className="btn" type="submit" disabled={loading} style={{ width: "100%" }}>
+          {loading ? "Signing in…" : "Sign in"}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }

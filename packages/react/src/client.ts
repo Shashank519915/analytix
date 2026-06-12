@@ -1,5 +1,5 @@
-import type { PublicSiteConfig } from "@Shashank519915/analytix-core";
-import { isPublicFieldEnabled, shouldDropEventForSampling } from "@Shashank519915/analytix-core";
+import type { PublicSiteConfig } from "@analytix/core";
+import { isPublicFieldEnabled, shouldDropEventForSampling } from "@analytix/core";
 import type { AnalytixConfig } from "./AnalytixProvider";
 
 function prefix(config: AnalytixConfig, key: string) {

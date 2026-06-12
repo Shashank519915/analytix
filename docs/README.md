@@ -19,27 +19,30 @@ Analytix is a multi-tenant, first-party analytics platform. Host it once, connec
 ```
 analytics/
   packages/
-    core/         @YOUR_GITHUB_USERNAME/analytix-core   (published)
-    react/        @YOUR_GITHUB_USERNAME/analytix-react  (published)
-    dashboard/    @YOUR_GITHUB_USERNAME/analytix-dashboard (published)
-    db/           @analytix/db                          (platform only, not published)
+    core/         @analytix/core       (published on npmjs)
+    react/        @analytix/react      (published on npmjs)
+    dashboard/    @analytix/dashboard  (published on npmjs)
+    db/           @analytix/db         (platform only, not published)
   apps/
-    web/          @analytix/web                         (hosted platform app)
+    web/          @analytix/web        (hosted platform app)
   docs/
     setup/        Public operator guides
     setup.local.example/  Template for private operator notes
+    setup.local/  Your private URLs/keys (gitignored — create from example)
     agents/       Integration guides for coding agents
 ```
 
-## Package scope
+## Published packages (npmjs)
 
-Run once after clone (or when forking):
+Consumer apps install from [npmjs.com](https://www.npmjs.com/org/analytix):
 
-```bash
-node scripts/configure-github-scope.mjs YOUR_GITHUB_USERNAME
-```
+| Package | Version |
+|---------|---------|
+| `@analytix/core` | ^0.2.2 |
+| `@analytix/react` | ^0.2.2 |
+| `@analytix/dashboard` | ^0.2.2 |
 
-See [PUBLISHING.md](./PUBLISHING.md) for GitHub Packages auth and making packages **public** later.
+No GitHub token or `.npmrc` auth required for public installs. See [PUBLISHING.md](./PUBLISHING.md) for publishing new versions.
 
 ## Quick operator checklist
 

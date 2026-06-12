@@ -10,7 +10,7 @@ Adapt file paths to your project structure.
 | Style | When to use |
 |-------|-------------|
 | **Custom admin dashboard** | Branded UI, site-specific filters (blog picker, skeleton, extra cards) |
-| **Embeddable package** | Fast setup, generic UI — `@YOUR_GITHUB_USERNAME/analytix-dashboard` |
+| **Embeddable package** | Fast setup, generic UI — `@analytix/dashboard` |
 | **Platform UI only** | No embed — link admins to `{APP_URL}/dashboard` |
 
 ---

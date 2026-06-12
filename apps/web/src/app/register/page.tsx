@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { AuthLayout } from "@/components/auth/AuthLayout";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -39,59 +40,58 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="authShell">
-      <div className="card authCard">
-        <h1>Create account</h1>
-        <p>Start tracking analytics for your sites.</p>
-
-        <form className="stack" onSubmit={handleSubmit}>
-          <div className="field">
-            <label htmlFor="name">Name</label>
-            <input
-              id="name"
-              type="text"
-              autoComplete="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={8}
-              required
-            />
-          </div>
-
-          {error ? <p className="error">{error}</p> : null}
-
-          <button className="btn" type="submit" disabled={loading}>
-            {loading ? "Creating account…" : "Create account"}
-          </button>
-        </form>
-
-        <p style={{ marginTop: 24 }}>
+    <AuthLayout
+      title="Create account"
+      lead="One workspace for all your properties."
+      footer={
+        <>
           Already have an account? <Link href="/login">Sign in</Link>
-        </p>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <form className="stack" onSubmit={handleSubmit}>
+        <div className="field">
+          <label htmlFor="name">Name</label>
+          <input
+            id="name"
+            type="text"
+            autoComplete="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            minLength={8}
+            required
+          />
+        </div>
+
+        {error ? <p className="error">{error}</p> : null}
+
+        <button className="btn" type="submit" disabled={loading} style={{ width: "100%" }}>
+          {loading ? "Creating account…" : "Create account"}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }

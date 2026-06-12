@@ -22,7 +22,7 @@ Operator setup (DB, deploy, seed): [../setup/PLATFORM-SETUP.md](../setup/PLATFOR
 - Use **separate** Analytix DB from the consumer app's CMS DB
 - Store `api_secret` only in server env (`ANALYTICS_API_SECRET`) — never `NEXT_PUBLIC_*`
 - Proxy collect + summary through consumer API routes (recommended)
-- Install packages from `@YOUR_GITHUB_USERNAME/analytix-*` via GitHub Packages
+- Install packages from `@analytix/*` on [npmjs](https://www.npmjs.com/org/analytix) (no auth token for public install)
 - Add `transpilePackages` in consumer `next.config.ts`
 - Set `ANALYTICS_API_URL` to the **hosted platform URL** in production (not `localhost`)
 - Add `SECRETS_SCAN_OMIT_KEYS` for `NEXT_PUBLIC_ANALYTICS_SITE_KEY` on Netlify consumer deploys
@@ -32,8 +32,8 @@ Operator setup (DB, deploy, seed): [../setup/PLATFORM-SETUP.md](../setup/PLATFOR
 - Do not put `ANALYTICS_API_SECRET` in client code or `NEXT_PUBLIC_*`
 - Do not point production `ANALYTICS_API_URL` at `localhost`
 - Do not run `db:seed` env vars on Netlify — seed is local CLI only
-- Do not skip building `@YOUR_GITHUB_USERNAME/analytix-core` before `@analytix/db` on platform deploy
-- Do not use `file:../analytics/...` deps in production consumer apps — use published GitHub Packages
+- Do not skip building `@analytix/core` before `@analytix/db` on platform deploy
+- Do not use `file:../analytics/...` deps in production consumer apps — use published npm packages
 - Do not create analytics tables in the consumer app's database
 
 ---
@@ -50,7 +50,7 @@ User wants analytics on a Next.js site?
 │   └─ Operator runs PLATFORM-SETUP.md + DEPLOY-NETLIFY.md first
 │
 ├─ Admin UI preference?
-│   ├─ Generic → @YOUR_GITHUB_USERNAME/analytix-dashboard component
+│   ├─ Generic → @analytix/dashboard component
 │   ├─ Custom branded → build UI calling /api/admin/analytics proxy (see REFERENCE-IMPLEMENTATION.md)
 │   └─ Central only → use platform /dashboard, skip embed
 │
@@ -60,13 +60,15 @@ User wants analytics on a Next.js site?
 
 ---
 
-## Published packages (GitHub Packages)
+## Published packages (npmjs)
 
 | Package | Install | Purpose |
 |---------|---------|---------|
-| `@YOUR_GITHUB_USERNAME/analytix-core` | Optional in consumer | Types, validation |
-| `@YOUR_GITHUB_USERNAME/analytix-react` | **Required** for tracking | Client SDK + React provider |
-| `@YOUR_GITHUB_USERNAME/analytix-dashboard` | Optional | Embeddable admin charts |
+| `@analytix/core` | Optional in consumer | Types, validation |
+| `@analytix/react` | **Required** for tracking | Client SDK + React provider |
+| `@analytix/dashboard` | Optional | Embeddable admin charts |
+
+Current version: **^0.2.2** (see [PUBLISHING.md](../PUBLISHING.md)).
 
 Platform-only (never publish to consumer):
 

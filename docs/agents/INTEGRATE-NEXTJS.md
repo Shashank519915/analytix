@@ -22,16 +22,16 @@ Follow these steps in order. Check off each item before moving on.
 ### 1.1 `package.json`
 
 ```json
-"@YOUR_GITHUB_USERNAME/analytix-react": "^0.1.0",
-"@YOUR_GITHUB_USERNAME/analytix-dashboard": "^0.1.0"
+"@analytix/react": "^0.2.2",
+"@analytix/dashboard": "^0.2.2"
 ```
 
-Add `@YOUR_GITHUB_USERNAME/analytix-core` only if importing types directly.
+Add `@analytix/core` only if importing types directly.
 
 ### 1.2 `.npmrc`
 
 ```
-@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com
+@analytix:registry=https://registry.npmjs.org/
 //npm.pkg.github.com/:_authToken=${NPM_TOKEN}
 ```
 
@@ -39,9 +39,9 @@ Add `@YOUR_GITHUB_USERNAME/analytix-core` only if importing types directly.
 
 ```typescript
 transpilePackages: [
-  "@YOUR_GITHUB_USERNAME/analytix-core",
-  "@YOUR_GITHUB_USERNAME/analytix-react",
-  "@YOUR_GITHUB_USERNAME/analytix-dashboard",
+  "@analytix/core",
+  "@analytix/react",
+  "@analytix/dashboard",
 ],
 ```
 
@@ -151,10 +151,10 @@ Pick one:
 
 ```tsx
 import dynamic from "next/dynamic";
-import "@YOUR_GITHUB_USERNAME/analytix-dashboard/styles.css";
+import "@analytix/dashboard/styles.css";
 
 const AnalyticsDashboard = dynamic(
-  () => import("@YOUR_GITHUB_USERNAME/analytix-dashboard").then((m) => m.AnalyticsDashboard),
+  () => import("@analytix/dashboard").then((m) => m.AnalyticsDashboard),
   { loading: () => <YourSkeleton /> }
 );
 

@@ -8,10 +8,10 @@
     "start": "next start --port 3001"
   },
   "dependencies": {
-    "@Shashank519915/analytix-core": "*",
-    "@Shashank519915/analytix-dashboard": "*",
+    "@analytix/core": "*",
+    "@analytix/dashboard": "*",
     "@analytix/db": "*",
-    "@Shashank519915/analytix-react": "*",
+    "@analytix/react": "*",
     "jose": "^6.2.3",
     "lucide-react": "^0.511.0",
     "next": "16.2.6",

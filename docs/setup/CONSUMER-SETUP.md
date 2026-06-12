@@ -19,7 +19,6 @@ Admin UI →  Your site /api/admin/analytics    →  Analytix GET  /api/v1/sites
 
 - Analytix platform running (local or https://your-analytix.example.com)
 - A **Site** created (via seed or dashboard) with keys copied
-- GitHub PAT with `read:packages` for npm install (if using published packages)
 
 ---
 
@@ -30,29 +29,26 @@ In your consumer `package.json`:
 ```json
 {
   "dependencies": {
-    "@YOUR_GITHUB_USERNAME/analytix-core": "^0.1.0",
-    "@YOUR_GITHUB_USERNAME/analytix-react": "^0.1.0",
-    "@YOUR_GITHUB_USERNAME/analytix-dashboard": "^0.1.0"
+    "@analytix/core": "^0.2.2",
+    "@analytix/react": "^0.2.2",
+    "@analytix/dashboard": "^0.2.2"
   }
 }
 ```
 
-### `.npmrc` (commit scope line; token via env)
+Optional `.npmrc` (explicit registry — no token needed):
 
 ```
-@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${NPM_TOKEN}
+@analytix:registry=https://registry.npmjs.org/
 ```
-
-Local dev: set `$env:NPM_TOKEN="ghp_..."` or use token in `~/.npmrc`.
 
 ### `next.config.ts`
 
 ```typescript
 transpilePackages: [
-  "@YOUR_GITHUB_USERNAME/analytix-core",
-  "@YOUR_GITHUB_USERNAME/analytix-react",
-  "@YOUR_GITHUB_USERNAME/analytix-dashboard",
+  "@analytix/core",
+  "@analytix/react",
+  "@analytix/dashboard",
 ],
 ```
 
@@ -100,6 +96,7 @@ export function getAnalytixClientConfig() {
   return {
     siteKey,
     collectUrl: process.env.NEXT_PUBLIC_ANALYTICS_COLLECT_URL?.replace(/\/$/, "") || "/api/analytics/collect",
+    configUrl: process.env.NEXT_PUBLIC_ANALYTICS_CONFIG_URL?.replace(/\/$/, "") || "/api/analytics/config",
     storagePrefix: "mysite",
     skipPaths: ["/admin", "/preview"],
   };
@@ -110,12 +107,12 @@ export function getAnalytixClientConfig() {
 
 ## Step 4 — Client tracking (layout)
 
-Wrap the app with `@YOUR_GITHUB_USERNAME/analytix-react`:
+Wrap the app with `@analytix/react`:
 
 ```tsx
 // src/components/analytics/AnalytixLoader.tsx
 import { getAnalytixClientConfig } from "@/lib/analytix-config";
-import { AnalytixProvider, AnalytixTracker } from "@YOUR_GITHUB_USERNAME/analytix-react";
+import { AnalytixProvider, AnalytixTracker } from "@analytix/react";
 
 export default function AnalytixLoader() {
   const config = getAnalytixClientConfig();
@@ -215,8 +212,8 @@ CSV export: proxy `GET /api/v1/sites/:id/export` the same way (see Bluemint `src
 **Option A — Generic embeddable package**
 
 ```tsx
-import { AnalyticsDashboard } from "@YOUR_GITHUB_USERNAME/analytix-dashboard";
-import "@YOUR_GITHUB_USERNAME/analytix-dashboard/styles.css";
+import { AnalyticsDashboard } from "@analytix/dashboard";
+import "@analytix/dashboard/styles.css";
 
 <AnalyticsDashboard
   siteId={process.env.NEXT_PUBLIC_ANALYTICS_SITE_ID!}

@@ -5,7 +5,7 @@ import {
   normalizeReferrerHost,
   parseUserAgent,
   type AnalyticsEventInput,
-} from "@Shashank519915/analytix-core";
+} from "@analytix/core";
 import { getDb } from "./client";
 import { upsertDailyRollup } from "./rollups";
 import { getSiteById } from "./sites";

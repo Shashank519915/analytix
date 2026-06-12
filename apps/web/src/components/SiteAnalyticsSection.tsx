@@ -3,8 +3,8 @@
 import {
   AnalyticsDashboard,
   AnalyticsDashboardSkeleton,
-} from "@Shashank519915/analytix-dashboard";
-import type { DashboardWidgetId } from "@Shashank519915/analytix-core";
+} from "@analytix/dashboard";
+import type { DashboardWidgetId } from "@analytix/core";
 
 export function SiteAnalyticsSection({
   siteId,

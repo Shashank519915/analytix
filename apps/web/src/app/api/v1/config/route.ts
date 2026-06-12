@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPublicSiteConfig, getSiteBySiteKey } from "@analytix/db";
-import { isOriginAllowed } from "@Shashank519915/analytix-core";
+import { isOriginAllowed } from "@analytix/core";
 import { buildCorsHeaders } from "@/lib/cors";
 
 export async function OPTIONS(request: Request) {

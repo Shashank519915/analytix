@@ -1,6 +1,6 @@
 {
-  "name": "@Shashank519915/analytix-react",
-  "version": "0.2.0",
+  "name": "@analytix/react",
+  "version": "0.2.3",
   "description": "Analytix React tracker and client SDK",
   "type": "module",
   "main": "./dist/index.js",
@@ -16,8 +16,8 @@
     }
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
-    "access": "restricted"
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "repository": {
     "type": "git",
@@ -39,7 +39,7 @@
     }
   },
   "dependencies": {
-    "@Shashank519915/analytix-core": "^0.2.0"
+    "@analytix/core": "^0.2.2"
   },
   "devDependencies": {
     "@types/react": "^19",

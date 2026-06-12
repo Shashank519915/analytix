@@ -2,7 +2,7 @@
 
 ## Platform build (Netlify / CI)
 
-### `Cannot find module '@YOUR_GITHUB_USERNAME/analytix-core'`
+### `Cannot find module '@analytix/core'`
 
 **Cause:** `@analytix/db` builds before `packages/core/dist` exists.
 
@@ -56,22 +56,23 @@ SECRETS_SCAN_OMIT_KEYS=CLOUDINARY_CLOUD_NAME,NEXT_PUBLIC_ANALYTICS_SITE_KEY,NEXT
 
 ---
 
-### `404` installing `@YOUR_GITHUB_USERNAME/analytix-*`
+### `404` installing `@analytix/*`
 
-**Cause:** Missing GitHub Packages auth.
+**Cause:** Packages not published yet, or wrong registry.
 
 **Fix:**
 
-- `.npmrc` with `@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com`
-- Netlify env `NPM_TOKEN` with `read:packages`
+- Confirm versions exist: `npm view @analytix/react version`
+- Optional `.npmrc`: `@analytix:registry=https://registry.npmjs.org/`
+- No `NPM_TOKEN` needed for public npmjs install
 
 ---
 
-### `Module not found: @YOUR_GITHUB_USERNAME/analytix-react` (local)
+### `Module not found: @analytix/react` (local)
 
 **Cause:** Turbopack + `file:` symlinks on Windows, or missing install.
 
-**Fix:** Use published packages from GitHub Packages, not `file:../analytics/...`.
+**Fix:** Use published packages from npmjs, or run `npm install` in consumer after publish.
 
 ---
 
@@ -135,7 +136,7 @@ taskkill /PID <pid> /F
 </div>
 ```
 
-Fixed in `@YOUR_GITHUB_USERNAME/analytix-dashboard@0.1.1+`. Custom dashboards (Bluemint) already use `height={300}`.
+Fixed in `@analytix/dashboard@0.2.2+`. Custom dashboards (Bluemint) already use `height={300}`.
 
 ---
 
@@ -143,7 +144,7 @@ Fixed in `@YOUR_GITHUB_USERNAME/analytix-dashboard@0.1.1+`. Custom dashboards (B
 
 ### `No workspaces found: --workspace=@analytix/core`
 
-**Cause:** Packages renamed to `@YOUR_GITHUB_USERNAME/analytix-*` but scripts still use old names.
+**Cause:** Running workspace commands from wrong directory or stale `package.json` scripts.
 
 **Fix:** Use `npm run build:packages` or `npm run build` from root `package.json`.
 

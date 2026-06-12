@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 /**
+ * DEPRECATED — GitHub Packages migration helper.
+ * Analytix now publishes to npmjs as @analytix/* (see docs/PUBLISHING.md).
+ * Do not run this unless you intentionally need GitHub Packages again.
+ *
  * Renames @analytix/* publish packages to @YOUR_GITHUB_USER/analytix-* for GitHub Packages.
  * Updates monorepo scripts, workspace deps, and TypeScript imports.
  * Usage: node scripts/configure-github-scope.mjs your-github-username

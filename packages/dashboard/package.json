@@ -1,6 +1,6 @@
 {
-  "name": "@Shashank519915/analytix-dashboard",
-  "version": "0.2.0",
+  "name": "@analytix/dashboard",
+  "version": "0.2.2",
   "description": "Analytix embeddable analytics dashboard UI",
   "type": "module",
   "main": "./dist/index.js",
@@ -17,8 +17,8 @@
     "./styles.css": "./dist/dashboard.css"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
-    "access": "restricted"
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "repository": {
     "type": "git",
@@ -35,11 +35,11 @@
     "lucide-react": ">=0.400"
   },
   "dependencies": {
-    "@Shashank519915/analytix-core": "^0.2.0"
+    "@analytix/core": "^0.2.2"
   },
   "devDependencies": {
     "@types/react": "^19",
     "typescript": "^5",
-    "@Shashank519915/analytix-core": "*"
+    "@analytix/core": "*"
   }
 }

@@ -18,10 +18,34 @@ Design direction for this product (from project skills):
 
 | Layer | Strength | Gap |
 |-------|----------|-----|
-| **Backend** | Rich `AnalyticsSummary` (UTM, geo, content, sessions, compare) | Dashboard shows ~50%; rollups unused; custom events not aggregated |
-| **Platform UI** | Auth, sites list, create site, embed dashboard | No site edit, key rotation, snippets, teams |
-| **Dashboard package** | Filters, chart, 5 KPIs, CSV export | No skeleton, no dark mode, missing 10+ API fields |
-| **React SDK** | Page views, engagement, UTM, blog content | Next-only; no consent; no scroll/clicks/outbound |
+| **Backend** | Rich summary, channels, UTM term/content, collection profiles | Rollups unused; custom events not aggregated; no summary cache |
+| **Platform UI** | Auth, sites, settings, embed dashboard | Generic styling — needs editorial shell (minimalist-ui); no sidebar IA |
+| **Dashboard package** | Full widgets, skeleton, dark mode, widget toggles | Drill-down filters, % of total, sticky toolbar |
+| **React SDK** | page_view, engagement, remote config, consent hook | No plugin API; no offline queue; Next-coupled tracker |
+| **Distribution** | npmjs `@analytix/*` (from 0.2.2) | GitHub `@Shashank519915/*` deprecated |
+
+---
+
+## Inspiration: [DavidWells/analytics](https://github.com/DavidWells/analytics)
+
+Lightweight **plugin-based** analytics abstraction — not a backend replacement. Ideas worth adopting into Analytix SDK + platform:
+
+| DavidWells concept | Analytix adaptation | Target phase |
+|--------------------|---------------------|--------------|
+| `page` / `track` / `identify` API | Unified client API on `@analytix/core` | Phase 4 |
+| **Plugin system** + lifecycle hooks | `AnalytixPlugin` — `page`, `track`, `loaded`, `bootstrap` | Phase 4 |
+| Event **queue** + offline flush | IndexedDB queue, retry on `online` | Phase 4 |
+| **Debug mode** | `debug: true` → structured console + dev overlay | Phase 4 |
+| `plugins.enable` / `disable` | Maps to site `enabled_events` + runtime toggles | Phase 2 ✓ (server); Phase 4 (client) |
+| **Do-not-track** / consent | `consent_required` + `grantConsent()` | Phase 2 ✓ |
+| **Original source** (first-touch UTM) | Persist first campaign in session storage → metadata | Phase 5 |
+| **Scroll** utils | `scroll_depth` event at 25/50/75/100% | Phase 5 |
+| **Redact** utils | Field redaction before collect | Phase 5 |
+| **Script tag** / unpkg snippet | `@analytix/tracker` IIFE bundle | Phase 4 |
+| `identify` + traits | Optional `visitor_traits` JSONB (no PII by default) | Phase 6 |
+| Storage abstraction | Pluggable localStorage / cookie prefix | Phase 4 |
+
+**Not adopting:** multi-vendor fan-out (GA, Segment, etc.) — Analytix *is* the backend. Plugin pattern targets **extensions** (redaction, enrichment, debug), not third-party tools.
 
 ---
 
@@ -341,44 +365,105 @@ Shared: `loadingFallback`, `theme`, `widgets` props on embed package.
 
 ---
 
-# Part F — Suggested implementation phases
+# Part F — Implementation phases (v2)
 
-## Phase 1 — Quick wins (1–2 weeks)
+## Phase 1 — Dashboard & site settings ✅
 
-- [x] Wire all existing `AnalyticsSummary` fields to dashboard widgets
-- [x] Dashboard skeleton component + `loadingFallback` default
-- [x] CSS theme variables + light/dark toggle
-- [x] Fix metric grid + chart container
-- [x] Custom date range in UI
-- [x] `PATCH /api/sites/:id` + settings form (origins, exclude_paths, retention)
-- [x] Copy-to-clipboard for keys
+- [x] Wire all `AnalyticsSummary` fields to dashboard widgets
+- [x] Skeleton + dark mode + custom date range
+- [x] `PATCH /api/sites/:id` + copy keys
 
-## Phase 2 — Configurable analytics (2–3 weeks)
+## Phase 2 — Configurable analytics ✅
 
-- [x] `site_analytics_config` JSONB + collection profiles
-- [x] SDK reads profile; respects enabled events
-- [x] Dashboard widget toggles (localStorage → site config)
-- [x] utm_term/content in summary SQL
-- [x] Channel grouping for referrers
-- [x] Expand CSV export
+- [x] `analytics_config` JSONB + collection profiles
+- [x] SDK config endpoint + enabled events/fields
+- [x] Widget toggles + channels + expanded CSV
 
-## Phase 3 — Production hardening (2–3 weeks)
+## Phase 2b — npmjs distribution ✅
+
+- [x] `publishConfig.registry` → npmjs
+- [x] Rename scope to `@analytix/*` (npm lowercase requirement)
+- [x] Bluemint: `@analytix:registry` on npmjs, no GitHub token
+- [x] Publish `@analytix/*` `0.2.2` to npmjs
+- [x] Bluemint `package-lock.json` resolves npmjs tarballs
+- [ ] Publish `@analytix/react@0.2.3` (consent + config-load race fix)
+- [ ] Verify Netlify green after lockfile push
+
+## Phase 3 — Platform shell UI (apps/web) ✅
+
+**Goal:** Replace generic auth/sites UI with editorial B2B cockpit ([minimalist-ui](../bluemint/.agents/skills/minimalist-ui), [emil-design-eng](../bluemint/.agents/skills/emil-design-eng), [brandkit](../bluemint/.agents/skills/brandkit)).
+
+**Scope:** Root platform only — **not** `@analytix/dashboard` embed (later).
+
+- [x] Design tokens in `globals.css` (warm bone canvas `#F7F6F3`, charcoal text, crisp `#EAEAEA` borders)
+- [x] App shell: sidebar nav (Sites, Account), consistent page header
+- [x] Auth pages: login/register — editorial split layout, no gradient heroes
+- [x] Sites list: bento cards, empty state, skeleton rows
+- [x] Site detail: tabs — Analytics | Settings | Integration (snippet + env + test event)
+- [x] Toast notifications (settings saved, keys copied)
+- [x] Mobile: collapsible sidebar
+- [x] Landing `/` for logged-out visitors (product one-pager, not marketing fluff)
+
+## Phase 4 — SDK v2 (plugin architecture)
+
+Inspired by [DavidWells/analytics](https://github.com/DavidWells/analytics) lifecycle model.
+
+- [ ] `@analytix/core`: `createClient({ plugins })` with `page`, `track`, `identify`
+- [ ] `AnalytixPlugin` interface + lifecycle (`bootstrap`, `pageStart`, `track`, `loaded`)
+- [ ] Built-in **Analytix backend plugin** (POST collect)
+- [ ] Offline queue + flush on reconnect
+- [ ] `debug` mode + optional devtools panel
+- [ ] Vanilla JS snippet (`@analytix/tracker` or `dist/analytix.min.js`)
+- [ ] `@analytix/react`: thin wrapper over core client (decouple from Next `usePathname`)
+- [ ] Framework guides: Next.js, Vite SPA, static HTML
+
+## Phase 5 — Production hardening
 
 - [ ] Fix rollups + day-granularity read path
-- [ ] Summary cache
-- [ ] Custom events aggregation
-- [ ] Goals (basic: page visit goal)
-- [ ] Auth rate limits + tests
-- [ ] Vanilla JS tracker snippet
+- [ ] Summary cache (TTL 60s per site+filter hash)
+- [ ] Custom events registry + aggregation
+- [ ] Goals (page visit / custom event)
+- [ ] Scroll depth + outbound click collection
+- [ ] First-touch attribution (original source)
+- [ ] PII redaction layer (configurable field denylist)
+- [ ] Auth rate limits + integration tests
+- [ ] `schema_migrations` table + versioned migrate
 
-## Phase 4 — Advanced product (ongoing)
+## Phase 6 — Advanced product
 
-- [ ] Funnels, cohorts, alerts, webhooks
+- [ ] Funnels, cohorts, compare arbitrary periods
+- [ ] Realtime SSE dashboard strip
+- [ ] Webhooks + daily rollup notifications
 - [ ] Teams / RBAC
-- [ ] Realtime SSE
-- [ ] Scroll depth, outbound, web vitals
-- [ ] Compare arbitrary periods
-- [ ] Public API docs (OpenAPI)
+- [ ] Core Web Vitals events
+- [ ] OpenAPI public docs
+- [ ] Optional `identify` + visitor traits (privacy-first)
+
+---
+
+## Phase 3 UI spec (platform shell)
+
+Apply skills from `bluemint/.agents/skills/`:
+
+| Skill | Platform application |
+|-------|---------------------|
+| **minimalist-ui** | Warm monochrome, bento site cards, 8–12px radius, no pill chips on large surfaces |
+| **emil-design-eng** | Skeleton site list; no animation on high-frequency controls |
+| **design-taste-frontend** | Operator density 6/10 on settings; analytics tab delegates to embed dashboard |
+| **brandkit** | CSS vars: `--ax-canvas`, `--ax-ink`, `--ax-border`, `--ax-accent` |
+
+**Information architecture:**
+
+```
+/                    → marketing-lite landing (logged out)
+/login, /register
+/dashboard           → sites bento grid
+/dashboard/sites/new → create wizard
+/dashboard/sites/[id]
+  ├─ analytics (default) — embed @analytix/dashboard
+  ├─ settings          — collection profile, keys, origins
+  └─ integration       — npm install, snippet, test event, env checklist
+```
 
 ---
 
@@ -431,4 +516,6 @@ Shared: `loadingFallback`, `theme`, `widgets` props on embed package.
 
 ## Next step
 
-Pick a phase to implement first. Recommended: **Phase 1** (surface existing data + skeleton + dark mode + site settings) — highest user-visible value with lowest risk.
+**Immediate:** Publish `@analytix/react@0.2.3` (consent/config fix), bump Bluemint to `^0.2.3`, push lockfile, confirm Netlify green.
+
+**Then:** **Phase 4** — SDK plugin architecture.

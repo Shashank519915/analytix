@@ -48,7 +48,7 @@ Configured in repo root `analytics/netlify.toml`.
 
 | Key | Value |
 |-----|-------|
-| `NPM_TOKEN` | **Optional** — only if packages are private on GitHub Packages |
+| `NPM_TOKEN` | **Not needed** — `@analytix/*` is public on npmjs |
 | `ANALYTICS_API_URL` | `https://your-analytix.example.com` |
 | `ANALYTICS_SITE_ID` | UUID from seed/dashboard |
 | `ANALYTICS_API_SECRET` | `sk_secret_...` |
@@ -70,15 +70,13 @@ In `netlify.toml`:
 
 Or set the same value in Netlify UI → Environment variables.
 
-### `.npmrc` in consumer repo
-
-Public packages (scope only):
+### `.npmrc` in consumer repo (optional)
 
 ```
-@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com
+@analytix:registry=https://registry.npmjs.org/
 ```
 
-Private packages — add auth line and `NPM_TOKEN` in Netlify env.
+No `NPM_TOKEN` required for public packages.
 
 ---
 
@@ -98,9 +96,9 @@ Private packages — add auth line and `NPM_TOKEN` in Netlify env.
 
 | Error | Fix |
 |-------|-----|
-| `Cannot find module '@YOUR_GITHUB_USERNAME/analytix-core'` on Analytix build | Use `npm run build` not `build -w @analytix/db` only |
+| `Cannot find module '@analytix/core'` on Analytix build | Use `npm run build` not `build -w @analytix/db` only |
 | Bluemint secrets scan fails on `NEXT_PUBLIC_ANALYTICS_SITE_KEY` | Add `SECRETS_SCAN_OMIT_KEYS` |
 | Bluemint prod analytics empty | `ANALYTICS_API_URL` must be platform URL, not `localhost` |
-| `npm install` 404 on consumer | `.npmrc` scope; confirm packages are public or set `NPM_TOKEN` |
+| `npm install` 404 on consumer | Run `npm install` after packages are published; check `@analytix/*` on npmjs |
 
 See [../agents/TROUBLESHOOTING.md](../agents/TROUBLESHOOTING.md) for more.

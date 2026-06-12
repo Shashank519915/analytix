@@ -1,6 +1,4 @@
-# GitHub Packages — replace YOUR_GITHUB_USERNAME with your GitHub username or org
-@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-
-# When packages are public on GitHub Packages, consumers may not need NPM_TOKEN.
-# See docs/PUBLISHING.md for making packages public.
+# Publishers only — authenticate with npmjs (not needed for consumers)
+# npm login
+# or:
+//registry.npmjs.org/:_authToken=${NPM_TOKEN}

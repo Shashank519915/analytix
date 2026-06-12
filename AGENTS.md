@@ -19,9 +19,15 @@ When integrating or modifying Analytix, read these docs **in order**:
 - Never expose `ANALYTICS_API_SECRET` in client code
 - Never use `localhost` for `ANALYTICS_API_URL` in production consumer env
 - Platform deploy must run `npm run build` (full monorepo), not db-only build
-- Consumer sites install `@YOUR_GITHUB_USERNAME/analytix-*` from GitHub Packages (or public registry when published)
+- Consumer sites install `@analytix/*` from **npmjs** — no GitHub Packages token required
 - Operator-specific URLs/keys belong in `docs/setup.local/` (gitignored), not in committed docs
 
-## Package scope
+## Published packages
 
-Replace `YOUR_GITHUB_USERNAME` with the repo owner's GitHub username (run `configure-github-scope.mjs` if needed). See [docs/PUBLISHING.md](./docs/PUBLISHING.md).
+| Package | Purpose |
+|---------|---------|
+| `@analytix/core` | Types, validation, collection profiles |
+| `@analytix/react` | Client SDK + React provider |
+| `@analytix/dashboard` | Embeddable admin UI |
+
+See [docs/PUBLISHING.md](./docs/PUBLISHING.md) for publishing new versions.

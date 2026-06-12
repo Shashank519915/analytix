@@ -19,7 +19,7 @@ export default function LogoutButton() {
   }
 
   return (
-    <button className="btnSecondary" type="button" onClick={handleLogout} disabled={loading}>
+    <button className="btnGhost" type="button" onClick={handleLogout} disabled={loading}>
       {loading ? "Signing out…" : "Sign out"}
     </button>
   );

@@ -52,7 +52,7 @@ Read by `npm run db:seed` from `analytics/.env.local`:
 
 | Variable | Purpose |
 |----------|---------|
-| `NPM_TOKEN` | GitHub PAT `read:packages` for `@YOUR_GITHUB_USERNAME/analytix-*` |
+| `NPM_TOKEN` | **Not required** — `@analytix/*` is public on npmjs |
 | `SECRETS_SCAN_OMIT_KEYS` | `CLOUDINARY_CLOUD_NAME,NEXT_PUBLIC_ANALYTICS_SITE_KEY,NEXT_PUBLIC_ANALYTICS_SITE_ID,ANALYTICS_SITE_ID` |
 
 ---
@@ -69,22 +69,13 @@ Read by `npm run db:seed` from `analytics/.env.local`:
 
 ---
 
-## Local npm auth
+## Consumer npm (optional)
 
-Consumer `.npmrc`:
+No auth required for public `@analytix/*` on npmjs. Optional explicit registry in consumer `.npmrc`:
 
 ```
-@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${NPM_TOKEN}
+@analytix:registry=https://registry.npmjs.org/
 ```
-
-PowerShell before install:
-
-```powershell
-$env:NPM_TOKEN="ghp_xxxxxxxx"
-```
-
-Or store token in `C:\Users\<you>\.npmrc` (user-level).
 
 ---
 

@@ -52,8 +52,8 @@ Each consumer is one **Site** in Analytix with unique keys.
 
 ### Layer 2 — npm packages (consumer install)
 
-- `@YOUR_GITHUB_USERNAME/analytix-react` — tracking in layout
-- `@YOUR_GITHUB_USERNAME/analytix-dashboard` — optional generic admin UI
+- `@analytix/react` — tracking in layout
+- `@analytix/dashboard` — optional generic admin UI
 - Published via GitHub Packages ([../PUBLISHING.md](../PUBLISHING.md))
 
 ### Layer 3 — Consumer app wiring

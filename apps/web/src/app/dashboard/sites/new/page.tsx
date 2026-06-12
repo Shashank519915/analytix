@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { PageHeader } from "@/components/shell/PageHeader";
 
 export default function NewSitePage() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function NewSitePage() {
         throw new Error(payload.error ?? "Failed to create site");
       }
 
-      router.push(`/dashboard/sites/${payload.site.id}`);
+      router.push(`/dashboard/sites/${payload.site.id}?tab=integration`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create site");
@@ -48,16 +49,16 @@ export default function NewSitePage() {
   }
 
   return (
-    <main>
-      <div className="pageHeader">
-        <div>
-          <h1 className="pageTitle">Create site</h1>
-          <p className="pageSubtitle">Add a new property to track.</p>
-        </div>
-        <Link className="btnSecondary" href="/dashboard">
-          Back
-        </Link>
-      </div>
+    <>
+      <PageHeader
+        title="Create site"
+        subtitle="Add a domain and allowed origins for collection."
+        actions={
+          <Link className="btnSecondary" href="/dashboard">
+            Cancel
+          </Link>
+        }
+      />
 
       <div className="card">
         <form className="stack" onSubmit={handleSubmit}>
@@ -101,6 +102,6 @@ export default function NewSitePage() {
           </button>
         </form>
       </div>
-    </main>
+    </>
   );
 }

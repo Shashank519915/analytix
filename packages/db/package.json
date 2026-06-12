@@ -18,7 +18,7 @@
     "db:seed": "node scripts/seed.mjs"
   },
   "dependencies": {
-    "@Shashank519915/analytix-core": "*",
+    "@analytix/core": "*",
     "@neondatabase/serverless": "^1.1.0"
   },
   "devDependencies": {

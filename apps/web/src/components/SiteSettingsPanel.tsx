@@ -7,13 +7,14 @@ import type {
   CollectionProfile,
   DashboardWidgetId,
   SiteRecord,
-} from "@Shashank519915/analytix-core";
+} from "@analytix/core";
 import {
   DASHBOARD_WIDGET_IDS,
   DASHBOARD_WIDGET_LABELS,
   DEFAULT_DASHBOARD_WIDGETS,
-} from "@Shashank519915/analytix-core";
+} from "@analytix/core";
 import { CopyButton } from "./CopyButton";
+import { useToast } from "./ToastProvider";
 
 const EVENT_OPTIONS: CollectionEventType[] = [
   "page_view",
@@ -67,13 +68,12 @@ export function SiteSettingsPanel({
     site.analytics_config.dashboard_widgets
   );
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const { toast } = useToast();
 
   async function handleSave(event: React.FormEvent) {
     event.preventDefault();
     setSaving(true);
-    setMessage("");
     setError("");
 
     const retention = Number.parseInt(retentionDays, 10);
@@ -115,7 +115,7 @@ export function SiteSettingsPanel({
         throw new Error(payload.error ?? "Failed to save settings");
       }
 
-      setMessage("Settings saved.");
+      toast("Settings saved");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save settings");
     } finally {
@@ -124,36 +124,51 @@ export function SiteSettingsPanel({
   }
 
   return (
-    <div className="card" style={{ marginBottom: 24 }}>
-      <h2 style={{ marginTop: 0 }}>Site settings</h2>
+    <div className="card stack">
+      <div>
+        <h2 className="sectionTitle">Site settings</h2>
+        <p className="sectionLead">Keys, origins, retention, and collection profile.</p>
+      </div>
 
-      <div className="settingsGrid" style={{ marginBottom: 20 }}>
+      <div className="settingsGrid">
         <div>
-          <strong>Collect endpoint</strong>
+          <span className="fieldLabel">Collect endpoint</span>
           <div className="secretRow">
             <span>{collectUrl}</span>
-            <CopyButton value={collectUrl} />
+            <CopyButton
+              value={collectUrl}
+              onCopied={() => toast("Collect URL copied")}
+            />
           </div>
         </div>
         <div>
-          <strong>Config endpoint (SDK)</strong>
+          <span className="fieldLabel">Config endpoint (SDK)</span>
           <div className="secretRow">
             <span>{collectUrl.replace("/collect", "/config")}</span>
-            <CopyButton value={collectUrl.replace("/collect", "/config")} />
+            <CopyButton
+              value={collectUrl.replace("/collect", "/config")}
+              onCopied={() => toast("Config URL copied")}
+            />
           </div>
         </div>
         <div>
-          <strong>Site key</strong>
+          <span className="fieldLabel">Site key</span>
           <div className="secretRow">
             <span>{site.site_key}</span>
-            <CopyButton value={site.site_key} />
+            <CopyButton
+              value={site.site_key}
+              onCopied={() => toast("Site key copied")}
+            />
           </div>
         </div>
         <div>
-          <strong>API secret</strong>
+          <span className="fieldLabel">API secret</span>
           <div className="secretRow">
             <span>{site.api_secret}</span>
-            <CopyButton value={site.api_secret} />
+            <CopyButton
+              value={site.api_secret}
+              onCopied={() => toast("API secret copied")}
+            />
           </div>
         </div>
       </div>
@@ -212,7 +227,9 @@ export function SiteSettingsPanel({
 
         <hr style={{ border: 0, borderTop: "1px solid var(--border)", margin: "8px 0" }} />
 
-        <h3 style={{ margin: 0 }}>Collection profile</h3>
+        <h3 className="sectionTitle" style={{ fontSize: "1.0625rem" }}>
+          Collection profile
+        </h3>
         <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.875rem" }}>
           Controls what the SDK collects. Presets apply unless profile is set to custom.
         </p>
@@ -312,7 +329,6 @@ export function SiteSettingsPanel({
         </div>
 
         {error ? <p className="error">{error}</p> : null}
-        {message ? <p className="success">{message}</p> : null}
 
         <div>
           <button type="submit" className="btn" disabled={saving}>

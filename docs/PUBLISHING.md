@@ -1,174 +1,131 @@
-# Publishing to GitHub Packages
+# Publishing to npm
 
-Analytix ships three client packages for consumer websites:
+Analytix ships three **public** client packages on [npmjs.com](https://www.npmjs.com):
 
 | Package | Purpose |
 |---------|---------|
-| `@YOUR_SCOPE/analytix-core` | Types, validation, helpers |
-| `@YOUR_SCOPE/analytix-react` | Client tracker + React provider |
-| `@YOUR_SCOPE/analytix-dashboard` | Embeddable admin dashboard UI |
+| `@analytix/core` | Types, validation, helpers |
+| `@analytix/react` | Client tracker + React provider |
+| `@analytix/dashboard` | Embeddable admin dashboard UI |
 
-The platform app (`apps/web`) and `@analytix/db` stay in this repo — **not** published to npm.
+The platform app (`apps/web`) and `@analytix/db` stay in this repo — **not** published.
 
-The database schema (`packages/db/src/schema.sql`) **is** in the repo — required for self-hosters running `npm run db:migrate`.
+> **Note:** npm scopes must be **lowercase**. We use `@analytix/*` on npmjs (not `@Shashank519915/*`, which only worked on GitHub Packages).
 
 ---
 
-## 1. Create the GitHub repo
+## 1. npm account & scope
+
+**Important:** `@analytix/core` requires an npm **organization** named `analytix`. Without it, publish fails with `404 Scope not found`.
+
+1. Sign in at [npmjs.com](https://www.npmjs.com).
+2. Profile menu → **Add an Organization**.
+3. Name: **`analytix`** (this becomes the `@analytix` scope).
+4. Plan: **Unlimited public packages** (free).
+5. Enable **2FA** on your account (required to publish).
+
+If the name `analytix` is taken, pick another org name (e.g. `analytixneo`) and rename packages to `@analytixneo/*` before publishing — or publish under your **user scope** (`@your-npm-username/core`) with no org setup.
+
+Verify you're in the org: [npmjs.com/settings/analytix/members](https://www.npmjs.com/settings/analytix/members) (after creation).
+
+---
+
+## 2. Authenticate (publishers only)
+
+npm **requires 2FA** (or a publish token that bypasses 2FA) to publish packages.
+
+### Option A — Interactive login (one-time publish)
+
+1. Enable **2FA** on [npmjs.com](https://www.npmjs.com) → Account → **Two-Factor Authentication** (Authorization and Publishing, or Authorization only).
+2. Log in and enter your OTP when prompted:
+
+```bash
+npm login
+# Username, password, email — then npm will ask for a one-time code from your authenticator app
+```
+
+3. Publish:
+
+```bash
+npm run publish:packages
+```
+
+If prompted again during publish, enter a fresh OTP from your authenticator.
+
+### Option B — Automation token (CI / repeat publishes)
+
+1. npm → **Access Tokens** → **Generate New Token** → type **Granular Access Token**.
+2. Permissions: **Read and write** for packages (or the `@analytix` org if you created one).
+3. Enable **Bypass two-factor authentication for publish** (required for non-interactive publish).
+4. Set locally (do not commit):
+
+```bash
+# PowerShell
+$env:NPM_TOKEN="npm_..."
+```
+
+Publisher `.npmrc` (local, gitignored):
+
+```
+//registry.npmjs.org/:_authToken=${NPM_TOKEN}
+```
+
+Then run `npm run publish:packages`.
+
+**Consumers:** no `.npmrc` or token required. Optional explicit registry:
+
+```
+@analytix:registry=https://registry.npmjs.org/
+```
+
+---
+
+## 3. Build and publish
 
 ```bash
 cd analytics
-git init
-git add .
-git commit -m "Analytix analytics platform"
-git remote add origin git@github.com:YOUR_GITHUB_USERNAME/analytix.git
-git push -u origin main
-```
-
----
-
-## 2. Configure package scope
-
-GitHub Packages requires the npm scope to match your GitHub username or org.
-
-```bash
-node scripts/configure-github-scope.mjs YOUR_GITHUB_USERNAME
-```
-
-This renames packages from `@analytix/*` to `@YOUR_GITHUB_USERNAME/analytix-*`.
-
----
-
-## 3. Authenticate npm (publishers only)
-
-Create a GitHub classic PAT with `write:packages` and `read:packages`.
-
-```bash
-cp .npmrc.example .npmrc
-# PowerShell: $env:GITHUB_TOKEN="ghp_..."
-```
-
-Publisher `.npmrc`:
-
-```
-@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
----
-
-## 4. Build and publish
-
-```bash
 npm install
 npm run build:packages
 npm run publish:packages
 ```
 
-Publish order is automatic: **core → react → dashboard**.
+Publish order: **core → react → dashboard**.
 
-### Version bumps
+The publish script **skips versions already on npm** — safe to re-run after a partial publish (e.g. only `@analytix/react@0.2.3` is new).
 
-Bump `"version"` in all three `packages/*/package.json` files (keep in sync), then publish again.
+Publish a single package:
+
+```bash
+npm publish --access public -w @analytix/react
+```
 
 ---
 
-## 5. Install in a consumer project
-
-### `package.json`
+## 4. Install in a consumer project
 
 ```json
 {
   "dependencies": {
-    "@YOUR_GITHUB_USERNAME/analytix-core": "^0.1.0",
-    "@YOUR_GITHUB_USERNAME/analytix-react": "^0.1.0",
-    "@YOUR_GITHUB_USERNAME/analytix-dashboard": "^0.1.0"
+    "@analytix/core": "^0.2.2",
+    "@analytix/react": "^0.2.2",
+    "@analytix/dashboard": "^0.2.2"
   }
 }
 ```
 
-### Imports
-
 ```tsx
-import { AnalytixProvider } from "@YOUR_GITHUB_USERNAME/analytix-react";
-import { AnalyticsDashboard } from "@YOUR_GITHUB_USERNAME/analytix-dashboard";
-import "@YOUR_GITHUB_USERNAME/analytix-dashboard/styles.css";
+import { AnalytixProvider } from "@analytix/react";
+import { AnalyticsDashboard } from "@analytix/dashboard";
+import "@analytix/dashboard/styles.css";
 ```
 
-See [setup/CONSUMER-SETUP.md](./setup/CONSUMER-SETUP.md) for full wiring.
+Netlify/Vercel: no `NPM_TOKEN` needed.
 
 ---
 
-## 6. Consumer `.npmrc` — public vs private packages
+## 5. GitHub Packages (legacy)
 
-### Public packages (recommended for open source)
-
-After making packages **public** on GitHub (section 8), consumers only need the scope line:
-
-```
-@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com
-```
-
-**No `NPM_TOKEN` required** for `npm install` or CI/Netlify builds.
-
-Remove `NPM_TOKEN` from Netlify/Vercel env vars if you previously added it.
-
-### Private packages
-
-```
-@YOUR_GITHUB_USERNAME:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${NPM_TOKEN}
-```
-
-Set `NPM_TOKEN` (PAT with `read:packages`) in CI and local env.
-
----
-
-## 7. Local monorepo development
-
-While developing platform + consumer on the same machine, use `file:` links:
-
-```json
-"@YOUR_GITHUB_USERNAME/analytix-core": "file:../analytics/packages/core",
-"@YOUR_GITHUB_USERNAME/analytix-react": "file:../analytics/packages/react",
-"@YOUR_GITHUB_USERNAME/analytix-dashboard": "file:../analytics/packages/dashboard"
-```
-
-```bash
-cd analytics && npm run build:packages
-cd ../your-consumer-app && npm install && npm run dev
-```
-
----
-
-## 8. CI publish (optional)
-
-GitHub Action on tag `v*`:
-
-```yaml
-- run: npm run build:packages
-- run: npm run publish:packages
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
-
----
-
-## 9. Making packages public
-
-1. GitHub → **Packages** → select each package → **Package settings** → **Change visibility** → **Public**
-2. Repeat for `analytix-core`, `analytix-react`, `analytix-dashboard`
-
-After public:
-
-| Who | Needs token? |
-|-----|----------------|
-| **Consumers** installing packages | No |
-| **You** publishing new versions | Yes (`GITHUB_TOKEN` / PAT with `write:packages`) |
-| **Netlify/Vercel** consumer builds | No (scope-only `.npmrc`) |
-
-Consumers still need the registry scope in `.npmrc` so npm knows where to find `@YOUR_GITHUB_USERNAME/*`.
+`@Shashank519915/analytix-*` on GitHub Packages is **deprecated**. Use `@analytix/*` on npmjs from `0.2.2` onward.
 
 ---
 
@@ -176,10 +133,9 @@ Consumers still need the registry scope in `.npmrc` so npm knows where to find `
 
 | Error | Fix |
 |-------|-----|
-| `403 Forbidden` on publish | PAT needs `write:packages`; repo under same owner as scope |
-| `404` on install | `.npmrc` scope must match package name; check package is public |
-| Empty token errors on CI | Remove `//npm.pkg.github.com/:_authToken=...` when packages are public |
-| Consumer can't resolve package | Ensure `transpilePackages` in `next.config.ts` |
-| `file:` link fails on Windows | Use published packages instead |
-
-See also [setup/CONSUMER-SETUP.md](./setup/CONSUMER-SETUP.md) and [agents/TROUBLESHOOTING.md](./agents/TROUBLESHOOTING.md).
+| `403` … **cannot publish over the previously published versions** | That version already exists — bump `version` in `package.json` or re-run `npm run publish:packages` (skips existing versions) |
+| `403` … **Two-factor authentication or granular access token with bypass 2fa** | Enable 2FA on npm, then `npm login` and publish interactively — **or** use a Granular token with **Bypass 2FA for publish** (see §2) |
+| `404` … **Scope not found** | Create npm org **`analytix`** first (§1), then `npm login` as a member and re-run publish |
+| `name can no longer contain capital letters` | Use `@analytix/*` lowercase scope on npmjs |
+| `404` on install | Publish packages first; check [npmjs.com](https://www.npmjs.com/~analytix) |
+| Netlify `401` GitHub registry | Remove GitHub `.npmrc`; use `@analytix/*` from npmjs |

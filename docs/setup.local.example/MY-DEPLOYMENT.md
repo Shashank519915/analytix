@@ -33,7 +33,6 @@ copy docs\setup.local.example\MY-DEPLOYMENT.md docs\setup.local\MY-DEPLOYMENT.md
 
 | Key | My value |
 |-----|----------|
-| `NPM_TOKEN` | (GitHub PAT — keep private) |
 | `ANALYTICS_API_URL` | https://your-analytix.netlify.app |
 | `ANALYTICS_SITE_ID` | |
 | `ANALYTICS_API_SECRET` | |

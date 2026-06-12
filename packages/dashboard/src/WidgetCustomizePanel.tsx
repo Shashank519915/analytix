@@ -2,7 +2,7 @@ import {
   DASHBOARD_WIDGET_IDS,
   DASHBOARD_WIDGET_LABELS,
   type DashboardWidgetId,
-} from "@Shashank519915/analytix-core";
+} from "@analytix/core";
 
 export function WidgetCustomizePanel({
   widgets,

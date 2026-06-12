@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
-import type { AccountRecord, SiteRecord } from "@Shashank519915/analytix-core";
+import type { AccountRecord, SiteRecord } from "@analytix/core";
 import { getAccountById, getSiteByApiSecret, getSiteById } from "@analytix/db";
 
 export const SESSION_COOKIE = "analytix_session";

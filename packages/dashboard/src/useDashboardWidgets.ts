@@ -3,7 +3,7 @@ import {
   DASHBOARD_WIDGET_IDS,
   DEFAULT_DASHBOARD_WIDGETS,
   type DashboardWidgetId,
-} from "@Shashank519915/analytix-core";
+} from "@analytix/core";
 
 function storageKey(siteId: string) {
   return `analytix_widgets_${siteId}`;

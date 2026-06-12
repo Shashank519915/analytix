@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { AnalyticsSummary, DashboardWidgetId } from "@Shashank519915/analytix-core";
-import { DEFAULT_DASHBOARD_WIDGETS, percentChange } from "@Shashank519915/analytix-core";
+import type { AnalyticsSummary, DashboardWidgetId } from "@analytix/core";
+import { DEFAULT_DASHBOARD_WIDGETS, percentChange } from "@analytix/core";
 import {
   Area,
   CartesianGrid,

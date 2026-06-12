@@ -1,4 +1,4 @@
-import { scopeParams, type AnalyticsFilters, type AnalyticsSummary, type PeriodComparison } from "@Shashank519915/analytix-core";
+import { scopeParams, type AnalyticsFilters, type AnalyticsSummary, type PeriodComparison } from "@analytix/core";
 import { getDb } from "./client";
 import { firstRow, asRows } from "./rows";
 

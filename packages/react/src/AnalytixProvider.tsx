@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { PublicSiteConfig } from "@Shashank519915/analytix-core";
+import type { PublicSiteConfig } from "@analytix/core";
 
 export interface AnalytixConfig {
   /** Public site key (sk_live_...) */
@@ -21,6 +21,8 @@ export interface AnalytixConfig {
 interface AnalytixContextValue {
   config: AnalytixConfig;
   siteConfig: PublicSiteConfig | null;
+  /** True once remote config fetch finished (or no configUrl). */
+  configReady: boolean;
   consentGranted: boolean;
   grantConsent: () => void;
 }
@@ -51,21 +53,38 @@ export function AnalytixProvider({
   children: ReactNode;
 }) {
   const [siteConfig, setSiteConfig] = useState<PublicSiteConfig | null>(null);
-  const [consentGranted, setConsentGranted] = useState(config.consentGranted ?? true);
+  const [configReady, setConfigReady] = useState(!config.configUrl);
+  const [consentGranted, setConsentGranted] = useState(() => {
+    if (config.consentGranted !== undefined) return config.consentGranted;
+    return !config.configUrl;
+  });
 
   useEffect(() => {
     if (!config.configUrl) return;
-    void fetchPublicSiteConfig(config.configUrl, config.siteKey).then(setSiteConfig);
-  }, [config.configUrl, config.siteKey]);
+
+    let cancelled = false;
+    void fetchPublicSiteConfig(config.configUrl, config.siteKey).then((cfg) => {
+      if (cancelled) return;
+      setSiteConfig(cfg);
+      setConfigReady(true);
+      if (config.consentGranted !== undefined) return;
+      setConsentGranted(cfg?.consent_required ? false : true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [config.configUrl, config.siteKey, config.consentGranted]);
 
   const value = useMemo(
     () => ({
       config,
       siteConfig,
+      configReady,
       consentGranted,
       grantConsent: () => setConsentGranted(true),
     }),
-    [config, siteConfig, consentGranted]
+    [config, siteConfig, configReady, consentGranted]
   );
 
   return <AnalytixContext.Provider value={value}>{children}</AnalytixContext.Provider>;

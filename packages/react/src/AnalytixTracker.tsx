@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { isPathExcluded, isPublicEventEnabled } from "@Shashank519915/analytix-core";
+import { isPathExcluded, isPublicEventEnabled } from "@analytix/core";
 import { useAnalytixRuntime } from "./AnalytixProvider";
 import { trackEngagement, trackPageView } from "./client";
 
@@ -18,15 +18,16 @@ function defaultGetContent(pathname: string) {
 }
 
 export function AnalytixTracker({ getContentFromPath = defaultGetContent }: AnalytixTrackerProps) {
-  const { config, siteConfig, consentGranted } = useAnalytixRuntime();
+  const { config, siteConfig, configReady, consentGranted } = useAnalytixRuntime();
   const pathname = usePathname();
   const lastTracked = useRef("");
   const pageStartedAt = useRef(Date.now());
   const currentPath = useRef("");
 
   const skipPaths = [...(config.skipPaths ?? []), ...(siteConfig?.exclude_paths ?? [])];
-  const requiresConsent = siteConfig?.consent_required ?? false;
-  const trackingAllowed = consentGranted && (!requiresConsent || consentGranted);
+  const requiresConsent = siteConfig?.consent_required === true;
+  const trackingAllowed =
+    configReady && (!requiresConsent || consentGranted);
 
   useEffect(() => {
     if (!pathname || !trackingAllowed) return;

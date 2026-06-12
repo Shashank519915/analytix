@@ -1,4 +1,4 @@
-import { isOriginAllowed } from "@Shashank519915/analytix-core";
+import { isOriginAllowed } from "@analytix/core";
 
 export function buildCorsHeaders(
   origin: string | null,

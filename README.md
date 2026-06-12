@@ -18,15 +18,13 @@ Multi-tenant, first-party analytics platform. Host once, connect many websites v
 ```
 analytics/
   packages/
-    core/         @YOUR_GITHUB_USERNAME/analytix-*  (published)
-    react/
-    dashboard/
-    db/           @analytix/db  (platform only)
+    core/         @analytix/core       (published on npmjs)
+    react/        @analytix/react
+    dashboard/    @analytix/dashboard
+    db/           @analytix/db         (platform only)
   apps/web/       Hosted platform
   docs/           Public guides + agents/
 ```
-
-Configure package scope: `node scripts/configure-github-scope.mjs YOUR_GITHUB_USERNAME`
 
 ## Quick start (platform)
 
@@ -49,8 +47,8 @@ Full guide: [docs/setup/PLATFORM-SETUP.md](./docs/setup/PLATFORM-SETUP.md)
 
 | Endpoint | Auth | Purpose |
 |----------|------|---------|
-| `POST /api/v1/collect` | `X-Analytix-Site-Key` | Ingest events |
-| `GET /api/v1/sites/:id/summary` | `X-Analytix-Api-Secret` | Dashboard metrics |
-| `GET /api/v1/sites/:id/export` | Same | CSV export |
+| `POST /api/v1/collect` | Site key header | Ingest events |
+| `GET /api/v1/config` | Site key header | Public SDK config |
+| `GET /api/v1/sites/:id/summary` | Bearer api_secret | Dashboard data |
 
-[docs/agents/API-REFERENCE.md](./docs/agents/API-REFERENCE.md)
+See [docs/agents/API-REFERENCE.md](./docs/agents/API-REFERENCE.md).

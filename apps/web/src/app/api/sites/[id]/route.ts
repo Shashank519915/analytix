@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { updateSiteSchema } from "@Shashank519915/analytix-core";
+import { updateSiteSchema } from "@analytix/core";
 import { getSiteById, updateSite } from "@analytix/db";
 import { AuthError, requireAccountSession } from "@/lib/auth";
 
@@ -14,7 +14,7 @@ function publicSite(site: {
   exclude_paths: string[];
   allowed_origins: string[];
   retention_days: number;
-  analytics_config: import("@Shashank519915/analytix-core").SiteAnalyticsConfig;
+  analytics_config: import("@analytix/core").SiteAnalyticsConfig;
   created_at: string;
 }) {
   return {
