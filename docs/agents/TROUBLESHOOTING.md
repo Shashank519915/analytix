@@ -115,6 +115,20 @@ Until publish completes, temporarily pin `^0.3.0` only if you do not need 0.3.1 
 | 401 | Invalid site key | Match `NEXT_PUBLIC_ANALYTICS_SITE_KEY` to dashboard |
 | 403 | Origin blocked | Add prod URL to site `allowed_origins` in Analytix dashboard |
 
+---
+
+### Integration tab "Origin not allowed" on Send test event
+
+**Cause (fixed in latest platform):** Older builds POSTed to `/api/v1/collect` from the browser. The browser sent `Origin: https://your-analytix-platform.netlify.app`, which is not in the consumer site's allowed list (e.g. only `http://localhost:3000`).
+
+**Why real page views still worked:** Bluemint (and recommended setups) proxy collect through `/api/analytics/collect` on the server. Server-side `fetch` does not send `Origin`, so allowed-origin checks pass.
+
+**Fix:** Deploy latest platform — test event uses authenticated `POST /api/sites/:id/test-event` (server-side collect). No origin required.
+
+**localhost:3000 in allowed origins:** Auto-added for local `next dev` on the consumer app. Safe to keep; remove in Settings if you never test locally.
+
+---
+
 Note: Bluemint proxy is server-to-server — origin check often skipped. Direct browser → platform calls need allowed origins.
 
 ---

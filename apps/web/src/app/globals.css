@@ -1024,6 +1024,20 @@ kbd {
   color: var(--ax-success);
 }
 
+.originList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8125rem;
+}
+
+.originList li code {
+  word-break: break-all;
+}
+
 /* Toast */
 
 .toastViewport {

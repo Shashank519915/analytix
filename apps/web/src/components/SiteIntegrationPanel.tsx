@@ -31,7 +31,7 @@ export function SiteIntegrationPanel({
   collectUrl,
   appUrl,
 }: {
-  site: SiteRecord;
+  site: Omit<SiteRecord, "api_secret">;
   collectUrl: string;
   appUrl: string;
 }) {
@@ -59,33 +59,34 @@ export function Analytics({ children }: { children: React.ReactNode }) {
     { label: "ANALYTIX_SITE_KEY", value: site.site_key },
     { label: "ANALYTIX_COLLECT_URL", value: collectUrl },
     { label: "ANALYTIX_CONFIG_URL", value: configUrl },
-    { label: "Allowed origin", value: site.allowed_origins[0] ?? site.domain },
   ];
+
+  const devOrigins = site.allowed_origins.filter((origin) =>
+    /localhost|127\.0\.0\.1/.test(origin)
+  );
+  const prodOrigins = site.allowed_origins.filter(
+    (origin) => !/localhost|127\.0\.0\.1/.test(origin)
+  );
 
   async function sendTestEvent() {
     try {
-      const res = await fetch(collectUrl, {
+      const res = await fetch(`/api/sites/${site.id}/test-event`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Analytix-Site-Key": site.site_key,
-        },
-        body: JSON.stringify({
-          event_type: "page_view",
-          path: "/integration-test",
-          session_id: crypto.randomUUID(),
-          visitor_fingerprint: "analytix-integration-test",
-          referrer: "",
-          metadata: { source: "analytix_platform_test", page_title: "Analytix integration test" },
-        }),
+        credentials: "same-origin",
       });
 
+      const payload = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload.error ?? "Collect request failed");
+        throw new Error(payload.error ?? "Test event failed");
       }
 
-      toast("Test event sent — check Analytics in a few seconds.");
+      if (payload.recorded === false) {
+        toast(payload.reason ?? "Test event skipped by site rules.");
+        return;
+      }
+
+      toast("Test event recorded — check Analytics in a few seconds.");
     } catch (err) {
       toast(err instanceof Error ? err.message : "Test event failed");
     }
@@ -149,13 +150,49 @@ export function Analytics({ children }: { children: React.ReactNode }) {
             </li>
           ))}
         </ul>
+        <div className="stack" style={{ gap: 8 }}>
+          <span className="fieldLabel">Allowed origins ({site.allowed_origins.length})</span>
+          {prodOrigins.length ? (
+            <ul className="originList">
+              {prodOrigins.map((origin) => (
+                <li key={origin}>
+                  <code>{origin}</code>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--ax-muted)" }}>
+              No production origins configured — add your live site URL in Settings if the browser
+              SDK calls collect/config directly (not via a server proxy).
+            </p>
+          )}
+          {devOrigins.length ? (
+            <>
+              <span className="fieldLabel" style={{ marginTop: 4 }}>
+                Local dev origins
+              </span>
+              <ul className="originList">
+                {devOrigins.map((origin) => (
+                  <li key={origin}>
+                    <code>{origin}</code>
+                  </li>
+                ))}
+              </ul>
+              <p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--ax-muted)" }}>
+                <code>http://localhost:3000</code> is included by default so you can run the
+                consumer app locally (<code>next dev</code>) and test tracking in the browser.
+              </p>
+            </>
+          ) : null}
+        </div>
       </section>
 
       <section className="card stack">
         <div>
           <h2 className="sectionTitle">Verify collection</h2>
           <p className="sectionLead">
-            Sends a single <code>page_view</code> to your collect endpoint using the site key.
+            Sends a single <code>page_view</code> through the collect pipeline (server-side, same
+            as a consumer API proxy). Does not depend on allowed origins.
           </p>
         </div>
         <div className="pageActions">

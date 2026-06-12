@@ -55,7 +55,7 @@ export default async function SiteDetailPage({
       {tab === "settings" ? <SiteSettingsPanel site={siteForClient} collectUrl={collectUrl} /> : null}
 
       {tab === "integration" ? (
-        <SiteIntegrationPanel site={site} collectUrl={collectUrl} appUrl={appUrl} />
+        <SiteIntegrationPanel site={siteForClient} collectUrl={collectUrl} appUrl={appUrl} />
       ) : null}
     </>
   );

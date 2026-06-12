@@ -220,6 +220,12 @@ export function SiteSettingsPanel({
             onChange={(e) => setAllowedOrigins(e.target.value)}
             placeholder={"https://example.com\nhttps://www.example.com"}
           />
+          <p style={{ margin: "6px 0 0", fontSize: "0.8125rem", color: "var(--muted)" }}>
+            Browser SDK requests must match one of these origins. Leave blank on create to auto-add{" "}
+            <code>https://your-domain</code>, <code>http://localhost:3000</code>, and{" "}
+            <code>http://localhost:3001</code>. Server-side proxies (recommended) do not send{" "}
+            <code>Origin</code> and are not blocked.
+          </p>
         </div>
 
         <div className="field">
