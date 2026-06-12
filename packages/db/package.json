@@ -1,0 +1,26 @@
+{
+  "name": "@analytix/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:seed": "node scripts/seed.mjs"
+  },
+  "dependencies": {
+    "@analytix/core": "*",
+    "@neondatabase/serverless": "^1.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "analytix-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @analytix/web",
+    "build:packages": "npm run build -w @analytix/core && npm run build -w @analytix/react && npm run build -w @analytix/dashboard",
+    "build": "npm run build:packages && npm run build -w @analytix/db && npm run build -w @analytix/web",
+    "publish:packages": "node scripts/publish-packages.mjs",
+    "configure:scope": "node scripts/configure-github-scope.mjs",
+    "db:migrate": "npm run db:migrate -w @analytix/db",
+    "db:seed": "npm run db:seed -w @analytix/db"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "name": "@analytix/dashboard",
+  "version": "0.1.0",
+  "description": "Analytix embeddable analytics dashboard UI",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./styles.css": "./dist/dashboard.css"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_GITHUB_ORG/analytix.git",
+    "directory": "packages/dashboard"
+  },
+  "scripts": {
+    "build": "tsc && node -e \"require('fs').copyFileSync('src/dashboard.css','dist/dashboard.css')\"",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "recharts": ">=2",
+    "lucide-react": ">=0.400"
+  },
+  "dependencies": {
+    "@analytix/core": "^0.1.0"
+  },
+  "devDependencies": {
+    "@analytix/core": "*",
+    "@types/react": "^19",
+    "typescript": "^5"
+  }
+}
